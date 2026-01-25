@@ -1,6 +1,6 @@
 {
   "name": "react-native-alarmkit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "React Native wrapper for iOS AlarmKit framework",
   "main": "lib/index",
   "module": "lib/index",
@@ -31,7 +31,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf android/build node_modules/**/android/build lib",
     "lint": "eslint \"**/*.{js,ts,tsx}\" --fix",
-    "lint-ci": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/github-actions",
+    "lint-ci": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/eslint-formatter-github-actions",
     "typescript": "tsc",
     "specs": "tsc --noEmit false && nitrogen --logLevel=\"debug\""
   },
@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
     "@react-native/babel-preset": "0.83.0",
     "@react-native/eslint-config": "0.83.0",
     "@types/react": "^19.1.03",
