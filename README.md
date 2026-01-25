@@ -368,4 +368,4 @@ See the [example](./example) directory for a complete demo app showcasing:
 
 ## License
 
-MIT
+Apache 2.0
