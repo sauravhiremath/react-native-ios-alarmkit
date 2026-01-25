@@ -1,7 +1,9 @@
 import type { HybridObject } from 'react-native-nitro-modules'
 
-export interface AlarmKit
-  extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
+export interface AlarmKit extends HybridObject<{
+  ios: 'swift'
+  android: 'kotlin'
+}> {
   readonly isSupported: boolean
 
   getAuthorizationState(): Promise<string>
@@ -21,4 +23,3 @@ export interface AlarmKit
   addAuthorizationListener(callback: (state: string) => void): string
   removeAuthorizationListener(subscriptionId: string): void
 }
-

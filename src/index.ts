@@ -47,7 +47,9 @@ export const AlarmKit = {
           title: config.title,
           stopButton,
           secondaryButton,
-          secondaryButtonBehavior: config.snoozeEnabled ? 'countdown' : undefined,
+          secondaryButtonBehavior: config.snoozeEnabled
+            ? 'countdown'
+            : undefined,
         },
         countdown: {
           title: 'Time Remaining',
@@ -80,7 +82,9 @@ export const AlarmKit = {
           title: config.title,
           stopButton,
           secondaryButton,
-          secondaryButtonBehavior: config.snoozeEnabled ? 'countdown' : undefined,
+          secondaryButtonBehavior: config.snoozeEnabled
+            ? 'countdown'
+            : undefined,
         },
         countdown: {
           title: 'Alarm in...',
@@ -132,5 +136,3 @@ export { useAlarms, useAuthorizationState } from './hooks'
 export { AlarmKitError } from './AlarmKitError'
 export * from './types'
 export default AlarmKit
-
-

@@ -7,8 +7,7 @@ import type {
   Subscription,
 } from './types'
 
-const AlarmKitModule =
-  NitroModules.createHybridObject<AlarmKitSpec>('AlarmKit')
+const AlarmKitModule = NitroModules.createHybridObject<AlarmKitSpec>('AlarmKit')
 
 class AlarmKitManagerClass {
   get isSupported(): boolean {
@@ -24,10 +23,7 @@ class AlarmKitManagerClass {
     return AlarmKitModule.requestAuthorization()
   }
 
-  async schedule(
-    id: string,
-    configuration: AlarmConfiguration
-  ): Promise<void> {
+  async schedule(id: string, configuration: AlarmConfiguration): Promise<void> {
     return AlarmKitModule.schedule(id, JSON.stringify(configuration))
   }
 

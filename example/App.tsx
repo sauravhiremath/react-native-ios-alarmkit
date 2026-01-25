@@ -148,18 +148,34 @@ function App(): React.JSX.Element {
         <View style={styles.section}>
           <View style={styles.toggleContainer}>
             <TouchableOpacity
-              style={[styles.toggleButton, !useAdvancedAPI && styles.toggleButtonActive]}
+              style={[
+                styles.toggleButton,
+                !useAdvancedAPI && styles.toggleButtonActive,
+              ]}
               onPress={() => setUseAdvancedAPI(false)}
             >
-              <Text style={[styles.toggleText, !useAdvancedAPI && styles.toggleTextActive]}>
+              <Text
+                style={[
+                  styles.toggleText,
+                  !useAdvancedAPI && styles.toggleTextActive,
+                ]}
+              >
                 Simple API
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleButton, useAdvancedAPI && styles.toggleButtonActive]}
+              style={[
+                styles.toggleButton,
+                useAdvancedAPI && styles.toggleButtonActive,
+              ]}
               onPress={() => setUseAdvancedAPI(true)}
             >
-              <Text style={[styles.toggleText, useAdvancedAPI && styles.toggleTextActive]}>
+              <Text
+                style={[
+                  styles.toggleText,
+                  useAdvancedAPI && styles.toggleTextActive,
+                ]}
+              >
                 Advanced API
               </Text>
             </TouchableOpacity>
@@ -181,17 +197,25 @@ function App(): React.JSX.Element {
                   onChangeText={setMinutes}
                   keyboardType="number-pad"
                 />
-                <Button title="Schedule Simple Timer" onPress={scheduleSimpleTimer} />
+                <Button
+                  title="Schedule Simple Timer"
+                  onPress={scheduleSimpleTimer}
+                />
               </>
             ) : (
-              <Button title="Schedule Advanced Timer" onPress={scheduleAdvancedAlarm} />
+              <Button
+                title="Schedule Advanced Timer"
+                onPress={scheduleAdvancedAlarm}
+              />
             )}
           </View>
         )}
 
         {alarms.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Alarms ({alarms.length})</Text>
+            <Text style={styles.sectionTitle}>
+              Active Alarms ({alarms.length})
+            </Text>
             {alarms.map((alarm) => (
               <View key={alarm.id} style={styles.alarmItem}>
                 <View style={styles.alarmInfo}>
@@ -224,8 +248,8 @@ function App(): React.JSX.Element {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>React Hooks Demo</Text>
           <Text style={styles.infoText}>
-            This screen uses useAuthorizationState() and useAlarms() hooks to automatically
-            update when alarms change.
+            This screen uses useAuthorizationState() and useAlarms() hooks to
+            automatically update when alarms change.
           </Text>
         </View>
       </ScrollView>

@@ -8,7 +8,10 @@ export function useAlarms(): Alarm[] {
   useEffect(() => {
     if (!AlarmKitManager.shared.isSupported) return
 
-    AlarmKitManager.shared.getAlarms().then(setAlarms).catch(() => {})
+    AlarmKitManager.shared
+      .getAlarms()
+      .then(setAlarms)
+      .catch(() => {})
 
     const subscription =
       AlarmKitManager.shared.addAlarmUpdatesListener(setAlarms)
@@ -24,7 +27,10 @@ export function useAuthorizationState(): AuthorizationState {
   useEffect(() => {
     if (!AlarmKitManager.shared.isSupported) return
 
-    AlarmKitManager.shared.getAuthorizationState().then(setState).catch(() => {})
+    AlarmKitManager.shared
+      .getAuthorizationState()
+      .then(setState)
+      .catch(() => {})
 
     const subscription =
       AlarmKitManager.shared.addAuthorizationUpdatesListener(setState)
