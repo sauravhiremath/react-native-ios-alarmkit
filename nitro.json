@@ -1,0 +1,19 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "alarmkit"
+  ],
+  "ios": {
+    "iosModuleName": "NitroAlarmkit"
+  },
+  "android": {
+    "androidNamespace": [
+      "alarmkit"
+    ],
+    "androidCxxLibName": "NitroAlarmkit"
+  },
+  "autolinking": {},
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
