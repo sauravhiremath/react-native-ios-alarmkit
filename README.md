@@ -1,6 +1,6 @@
 # react-native-alarmkit
 
-React Native wrapper for iOS AlarmKit framework with full 1-1 API mapping. Create and manage alarms, timers, and countdown alerts with Live Activities on iOS 26+.
+React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timers, and countdown alerts with Live Activities on iOS 26+.
 
 ## Features
 

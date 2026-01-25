@@ -1,176 +1,239 @@
 import Foundation
 import NitroModules
+import SwiftUI
 
-@available(iOS 26.0, *)
+#if canImport(AlarmKit)
 import AlarmKit
+#endif
+
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 class HybridAlarmKit: HybridAlarmKitSpec {
-  var hybridContext = margelo.nitro.HybridContext()
-  
   var memorySize: Int {
-    return getSizeOf(self)
+    return MemoryLayout<HybridAlarmKit>.size
   }
   
   var isSupported: Bool {
+    #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
       return true
     }
+    #endif
     return false
   }
   
-  func getAuthorizationState() async throws -> String {
-    guard #available(iOS 26.0, *) else {
-      return "denied"
+  func getAuthorizationState() throws -> Promise<String> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.async {
+        switch AlarmManager.shared.authorizationState {
+        case .notDetermined:
+          return "notDetermined"
+        case .authorized:
+          return "authorized"
+        case .denied:
+          return "denied"
+        @unknown default:
+          return "denied"
+        }
+      }
     }
-    
-    switch AlarmManager.shared.authorizationState {
-    case .notDetermined:
-      return "notDetermined"
-    case .authorized:
-      return "authorized"
-    case .denied:
-      return "denied"
-    @unknown default:
-      return "denied"
-    }
+    #endif
+    return Promise.resolved(withResult: "denied")
   }
   
-  func requestAuthorization() async throws -> Bool {
-    guard #available(iOS 26.0, *) else {
-      return false
+  // NOTE: requestAuthorization() is an async throwing method.
+  // We use Promise.async to properly await the async operation.
+  func requestAuthorization() throws -> Promise<Bool> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.async {
+        do {
+          let _ = try await AlarmManager.shared.requestAuthorization()
+          return AlarmManager.shared.authorizationState == .authorized
+        } catch {
+          return false
+        }
+      }
     }
-    
-    do {
-      try await AlarmManager.shared.requestAuthorization()
-      return AlarmManager.shared.authorizationState == .authorized
-    } catch {
-      return false
-    }
+    #endif
+    return Promise.resolved(withResult: false)
   }
   
-  func schedule(id: String, configJson: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  // NOTE: schedule(id:configuration:) is an async throwing method.
+  // We use Promise.async to properly await the async operation.
+  func schedule(id: String, configJson: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.async { [self] in
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        let config = try self.parseConfiguration(configJson)
+        let _ = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
+      }
     }
-    
-    let config = try parseConfiguration(configJson)
-    try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
-  func cancel(id: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  // NOTE: cancel/stop/pause/resume/countdown are synchronous (not async) methods
+  // that only throw. We use Promise.parallel to run them on a background queue.
+  
+  func cancel(id: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel {
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        try AlarmManager.shared.cancel(id: alarmId)
+      }
     }
-    
-    try await AlarmManager.shared.cancel(id: alarmId)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
-  func stop(id: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  func stop(id: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel {
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        try AlarmManager.shared.stop(id: alarmId)
+      }
     }
-    
-    try await AlarmManager.shared.stop(id: alarmId)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
-  func pause(id: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  func pause(id: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel {
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        try AlarmManager.shared.pause(id: alarmId)
+      }
     }
-    
-    try await AlarmManager.shared.pause(id: alarmId)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
-  func resume(id: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  func resume(id: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel {
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        try AlarmManager.shared.resume(id: alarmId)
+      }
     }
-    
-    try await AlarmManager.shared.resume(id: alarmId)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
-  func countdown(id: String) async throws {
-    guard #available(iOS 26.0, *) else { return }
-    
-    guard let alarmId = UUID(uuidString: id) else {
-      throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+  func countdown(id: String) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel {
+        guard let alarmId = UUID(uuidString: id) else {
+          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+        }
+        
+        try AlarmManager.shared.countdown(id: alarmId)
+      }
     }
-    
-    try await AlarmManager.shared.countdown(id: alarmId)
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
   private var alarmListenerTasks: [String: Task<Void, Never>] = [:]
   private var authListenerTasks: [String: Task<Void, Never>] = [:]
   
-  func getAlarms() async throws -> String {
-    guard #available(iOS 26.0, *) else { return "[]" }
-    
-    var result: [AlarmData] = []
-    for await alarm in AlarmManager.shared.alarms {
-      result.append(encodeAlarm(alarm))
-    }
-    
-    let encoder = JSONEncoder()
-    let data = try encoder.encode(result)
-    return String(data: data, encoding: .utf8) ?? "[]"
-  }
-  
-  func addAlarmsListener(callback: @escaping (String) -> Void) -> String {
-    guard #available(iOS 26.0, *) else { return "" }
-    
-    let subscriptionId = UUID().uuidString
-    let task = Task {
-      for await alarms in AlarmManager.shared.alarmUpdates {
-        let encoded = encodeAlarms(alarms)
-        callback(encoded)
+  // NOTE: AlarmManager.shared.alarms is a synchronous throwing property getter.
+  // JSON encoding is also synchronous. We use Promise.parallel to avoid blocking.
+  func getAlarms() throws -> Promise<String> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.parallel { [self] in
+        let alarms = try AlarmManager.shared.alarms
+        let result = alarms.map { self.encodeAlarm($0) }
+        
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(result)
+        return String(data: data, encoding: .utf8) ?? "[]"
       }
     }
-    alarmListenerTasks[subscriptionId] = task
-    return subscriptionId
+    #endif
+    return Promise.resolved(withResult: "[]")
   }
   
-  func removeAlarmsListener(subscriptionId: String) {
+  func addAlarmsListener(callback: @escaping (String) -> Void) throws -> String {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      let subscriptionId = UUID().uuidString
+      let task = Task {
+        for await alarms in AlarmManager.shared.alarmUpdates {
+          let encoded = self.encodeAlarms(alarms)
+          callback(encoded)
+        }
+      }
+      alarmListenerTasks[subscriptionId] = task
+      return subscriptionId
+    }
+    #endif
+    return ""
+  }
+  
+  func removeAlarmsListener(subscriptionId: String) throws {
     alarmListenerTasks[subscriptionId]?.cancel()
     alarmListenerTasks.removeValue(forKey: subscriptionId)
   }
   
-  func addAuthorizationListener(callback: @escaping (String) -> Void) -> String {
-    guard #available(iOS 26.0, *) else { return "" }
-    
-    let subscriptionId = UUID().uuidString
-    let task = Task {
-      for await state in AlarmManager.shared.authorizationUpdates {
-        let stateString = authStateToString(state)
-        callback(stateString)
+  func addAuthorizationListener(callback: @escaping (String) -> Void) throws -> String {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      let subscriptionId = UUID().uuidString
+      let task = Task {
+        for await state in AlarmManager.shared.authorizationUpdates {
+          let stateString = self.authStateToString(state)
+          callback(stateString)
+        }
       }
+      authListenerTasks[subscriptionId] = task
+      return subscriptionId
     }
-    authListenerTasks[subscriptionId] = task
-    return subscriptionId
+    #endif
+    return ""
   }
   
-  func removeAuthorizationListener(subscriptionId: String) {
+  func removeAuthorizationListener(subscriptionId: String) throws {
     authListenerTasks[subscriptionId]?.cancel()
     authListenerTasks.removeValue(forKey: subscriptionId)
   }
   
+  // MARK: - Private Helper Methods
+  
+  #if canImport(AlarmKit)
   @available(iOS 26.0, *)
   private func encodeAlarm(_ alarm: Alarm) -> AlarmData {
     return AlarmData(
       id: alarm.id.uuidString,
       state: alarmStateToString(alarm.state),
       countdownDuration: alarm.countdownDuration != nil ? CountdownDurationData(
-        preAlert: Int(alarm.countdownDuration!.preAlert),
-        postAlert: Int(alarm.countdownDuration!.postAlert)
+        preAlert: Int(alarm.countdownDuration!.preAlert ?? 0),
+        postAlert: Int(alarm.countdownDuration!.postAlert ?? 0)
       ) : nil,
       schedule: alarm.schedule != nil ? scheduleToData(alarm.schedule!) : nil
     )
@@ -222,7 +285,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     case .relative(let relative):
       let weekdays: [String]?
       switch relative.repeats {
-      case .daily:
+      case .never:
         weekdays = nil
       case .weekly(let days):
         weekdays = days.map { weekdayToString($0) }
@@ -242,7 +305,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   @available(iOS 26.0, *)
-  private func weekdayToString(_ weekday: Alarm.Schedule.Relative.Recurrence.Weekday) -> String {
+  private func weekdayToString(_ weekday: Locale.Weekday) -> String {
     switch weekday {
     case .sunday: return "sunday"
     case .monday: return "monday"
@@ -264,11 +327,13 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     let decoder = JSONDecoder()
     let config = try decoder.decode(AlarmConfigurationData.self, from: data)
     
+    // Create countdown duration
     let countdownDuration = Alarm.CountdownDuration(
       preAlert: TimeInterval(config.countdownDuration.preAlert),
       postAlert: TimeInterval(config.countdownDuration.postAlert)
     )
     
+    // Create presentation
     let alertPresentation = try createAlertPresentation(config.presentation.alert)
     var presentation = AlarmPresentation(alert: alertPresentation)
     
@@ -280,29 +345,31 @@ class HybridAlarmKit: HybridAlarmKitSpec {
       presentation.paused = try createPausedPresentation(paused)
     }
     
-    let tintColor: Color? = config.tintColor != nil ? parseColor(config.tintColor!) : nil
+    // Parse tint color
+    let tintColor: Color = config.tintColor != nil ? parseColor(config.tintColor!) : .blue
     
-    var attributes = AlarmAttributes<EmptyMetadata>(
+    // Create attributes with empty metadata
+    let attributes = AlarmAttributes<EmptyMetadata>(
       presentation: presentation,
-      tintColor: tintColor ?? .blue
+      metadata: EmptyMetadata(),
+      tintColor: tintColor
     )
     
-    if let metadata = config.metadata {
-      attributes.metadata = EmptyMetadata(metadata: metadata)
-    }
+    // Create schedule if provided
+    let schedule: Alarm.Schedule? = config.schedule != nil ? try createSchedule(config.schedule!) : nil
     
-    var alarmConfig = AlarmManager.AlarmConfiguration(
+    // Parse sound - explicit type required for enum inference
+    let sound: AlertConfiguration.AlertSound = config.soundName != nil ? .named(config.soundName!) : .default
+    
+    // Create alarm configuration with all parameters
+    let alarmConfig = AlarmManager.AlarmConfiguration(
       countdownDuration: countdownDuration,
-      attributes: attributes
+      schedule: schedule,
+      attributes: attributes,
+      stopIntent: nil,
+      secondaryIntent: nil,
+      sound: sound
     )
-    
-    if let schedule = config.schedule {
-      alarmConfig.schedule = try createSchedule(schedule)
-    }
-    
-    if let soundName = config.soundName {
-      alarmConfig.sound = .named(soundName)
-    }
     
     return alarmConfig
   }
@@ -310,65 +377,76 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   @available(iOS 26.0, *)
   private func createAlertPresentation(_ data: AlertPresentationData) throws -> AlarmPresentation.Alert {
     let stopButton = AlarmButton(
-      text: data.stopButton.text,
+      text: "\(data.stopButton.text)",
       textColor: parseColor(data.stopButton.textColor),
       systemImageName: data.stopButton.systemImageName
     )
     
-    var presentation = AlarmPresentation.Alert(
-      title: data.title,
-      stopButton: stopButton
-    )
+    var secondaryButton: AlarmButton? = nil
+    var secondaryButtonBehavior: AlarmPresentation.Alert.SecondaryButtonBehavior? = nil
     
-    if let secondaryButton = data.secondaryButton {
-      let button = AlarmButton(
-        text: secondaryButton.text,
-        textColor: parseColor(secondaryButton.textColor),
-        systemImageName: secondaryButton.systemImageName
+    if let secondaryButtonData = data.secondaryButton {
+      secondaryButton = AlarmButton(
+        text: "\(secondaryButtonData.text)",
+        textColor: parseColor(secondaryButtonData.textColor),
+        systemImageName: secondaryButtonData.systemImageName
       )
       
-      let behavior: AlarmPresentation.Alert.SecondaryButtonBehavior
       if let behaviorStr = data.secondaryButtonBehavior {
-        behavior = behaviorStr == "countdown" ? .countdown : .custom
+        secondaryButtonBehavior = behaviorStr == "countdown" ? .countdown : .custom
       } else {
-        behavior = .countdown
+        secondaryButtonBehavior = .countdown
       }
-      
-      presentation.secondaryButton = button
-      presentation.secondaryButtonBehavior = behavior
     }
+    
+    let presentation = AlarmPresentation.Alert(
+      title: "\(data.title)",
+      stopButton: stopButton,
+      secondaryButton: secondaryButton,
+      secondaryButtonBehavior: secondaryButtonBehavior
+    )
     
     return presentation
   }
   
   @available(iOS 26.0, *)
   private func createCountdownPresentation(_ data: CountdownPresentationData) throws -> AlarmPresentation.Countdown {
-    var presentation = AlarmPresentation.Countdown(title: data.title)
-    
-    if let pauseButton = data.pauseButton {
-      presentation.pauseButton = AlarmButton(
-        text: pauseButton.text,
-        textColor: parseColor(pauseButton.textColor),
-        systemImageName: pauseButton.systemImageName
+    let pauseButton: AlarmButton? = data.pauseButton.map { buttonData in
+      AlarmButton(
+        text: "\(buttonData.text)",
+        textColor: parseColor(buttonData.textColor),
+        systemImageName: buttonData.systemImageName
       )
     }
     
-    return presentation
+    return AlarmPresentation.Countdown(
+      title: "\(data.title)",
+      pauseButton: pauseButton
+    )
   }
   
   @available(iOS 26.0, *)
   private func createPausedPresentation(_ data: PausedPresentationData) throws -> AlarmPresentation.Paused {
-    var presentation = AlarmPresentation.Paused(title: data.title)
-    
-    if let resumeButton = data.resumeButton {
-      presentation.resumeButton = AlarmButton(
-        text: resumeButton.text,
-        textColor: parseColor(resumeButton.textColor),
-        systemImageName: resumeButton.systemImageName
+    let resumeButton: AlarmButton
+    if let buttonData = data.resumeButton {
+      resumeButton = AlarmButton(
+        text: "\(buttonData.text)",
+        textColor: parseColor(buttonData.textColor),
+        systemImageName: buttonData.systemImageName
+      )
+    } else {
+      // Default resume button when none provided
+      resumeButton = AlarmButton(
+        text: "Resume",
+        textColor: .blue,
+        systemImageName: "play.circle"
       )
     }
     
-    return presentation
+    return AlarmPresentation.Paused(
+      title: "\(data.title)",
+      resumeButton: resumeButton
+    )
   }
   
   @available(iOS 26.0, *)
@@ -386,17 +464,18 @@ class HybridAlarmKit: HybridAlarmKitSpec {
       
       let time = Alarm.Schedule.Relative.Time(hour: hour, minute: minute)
       
-      if let weekdays = data.weekdays {
-        let days = weekdays.compactMap { weekdayString(from: $0) }
+      if let weekdays = data.weekdays, !weekdays.isEmpty {
+        let days = weekdays.compactMap { weekdayFromString($0) }
         let recurrence = Alarm.Schedule.Relative.Recurrence.weekly(days)
         return .relative(Alarm.Schedule.Relative(time: time, repeats: recurrence))
       } else {
-        return .relative(Alarm.Schedule.Relative(time: time, repeats: .daily))
+        return .relative(Alarm.Schedule.Relative(time: time, repeats: .never))
       }
     }
   }
   
-  private func weekdayString(from string: String) -> Alarm.Schedule.Relative.Recurrence.Weekday? {
+  @available(iOS 26.0, *)
+  private func weekdayFromString(_ string: String) -> Locale.Weekday? {
     switch string.lowercased() {
     case "sunday": return .sunday
     case "monday": return .monday
@@ -408,6 +487,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     default: return nil
     }
   }
+  #endif
   
   private func parseColor(_ hex: String) -> Color {
     var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -424,14 +504,17 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
 }
 
+// MARK: - EmptyMetadata
+
+#if canImport(AlarmKit)
 @available(iOS 26.0, *)
 struct EmptyMetadata: AlarmMetadata {
-  var metadata: [String: String]
-  
-  init(metadata: [String: String] = [:]) {
-    self.metadata = metadata
-  }
+  // Empty struct - no additional metadata needed
+  // Automatically conforms to Codable, Hashable, Sendable
 }
+#endif
+
+// MARK: - Codable Data Structures
 
 struct AlarmConfigurationData: Codable {
   let countdownDuration: CountdownDurationData
@@ -490,4 +573,3 @@ struct AlarmData: Codable {
   let countdownDuration: CountdownDurationData?
   let schedule: AlarmScheduleData?
 }
-
