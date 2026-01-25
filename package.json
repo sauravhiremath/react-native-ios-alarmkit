@@ -1,6 +1,6 @@
 {
   "name": "react-native-alarmkit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "React Native wrapper for iOS AlarmKit framework",
   "main": "lib/index",
   "module": "lib/index",
