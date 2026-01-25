@@ -16,7 +16,7 @@ import AlarmKit, {
   useAuthorizationState,
   AlarmKitManager,
   AlarmConfigurationFactory,
-} from 'react-native-alarmkit'
+} from 'react-native-ios-alarmkit'
 
 function App(): React.JSX.Element {
   const authState = useAuthorizationState()

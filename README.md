@@ -1,11 +1,11 @@
-# react-native-alarmkit
+# react-native-ios-alarmkit
 
 React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timers, and countdown alerts with Live Activities on iOS 26+.
 
 ## Features
 
 - **Simple API** for quick timer/alarm scheduling
-- **Advanced API** with 1-1 native AlarmKit mapping  
+- **Advanced API** with 1-1 native AlarmKit mapping
 - **React Hooks** for automatic state updates
 - **Event Listeners** for real-time alarm changes
 - Schedule alarms with fixed dates or recurring schedules
@@ -17,7 +17,7 @@ React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timer
 ## Installation
 
 ```bash
-yarn add react-native-alarmkit react-native-nitro-modules
+yarn add react-native-ios-alarmkit react-native-nitro-modules
 ```
 
 ### iOS Setup
@@ -48,7 +48,7 @@ No additional setup required. The library will return `isSupported: false` on An
 The simple API provides easy-to-use methods for common use cases:
 
 ```typescript
-import AlarmKit from 'react-native-alarmkit'
+import AlarmKit from 'react-native-ios-alarmkit'
 
 if (!AlarmKit.isSupported) {
   console.log('AlarmKit not supported on this platform')
@@ -85,7 +85,7 @@ await AlarmKit.resume('my-timer')
 Use hooks for automatic state updates:
 
 ```typescript
-import { useAlarms, useAuthorizationState } from 'react-native-alarmkit'
+import { useAlarms, useAuthorizationState } from 'react-native-ios-alarmkit'
 
 function MyComponent() {
   const authState = useAuthorizationState()
@@ -127,7 +127,10 @@ authSub.remove()
 For power users who need full control, use the advanced API that mirrors native AlarmKit exactly:
 
 ```typescript
-import { AlarmKitManager, AlarmConfigurationFactory } from 'react-native-alarmkit'
+import {
+  AlarmKitManager,
+  AlarmConfigurationFactory,
+} from 'react-native-ios-alarmkit'
 
 const config = AlarmConfigurationFactory.timer({
   duration: 300,
@@ -204,6 +207,7 @@ Requests user authorization to schedule alarms. Returns `true` if granted.
 Schedules a countdown timer.
 
 **SimpleTimerConfig:**
+
 - `duration: number` - Duration in seconds
 - `title: string` - Title shown when timer fires
 - `snoozeEnabled?: boolean` - Enable snooze button
@@ -216,6 +220,7 @@ Schedules a countdown timer.
 Schedules a recurring alarm.
 
 **SimpleAlarmConfig:**
+
 - `hour: number` - Hour (0-23)
 - `minute: number` - Minute (0-59)
 - `weekdays?: Weekday[]` - Days to repeat (omit for daily)
@@ -311,7 +316,14 @@ interface AlarmPresentation {
   paused?: PausedPresentation
 }
 
-type Weekday = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday'
+type Weekday =
+  | 'sunday'
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
 ```
 
 ## Live Activities
@@ -323,7 +335,7 @@ To display custom countdown UI with Live Activities, you need to implement a Wid
 All methods may throw `AlarmKitError`:
 
 ```typescript
-import { AlarmKitError } from 'react-native-alarmkit'
+import { AlarmKitError } from 'react-native-ios-alarmkit'
 
 try {
   await AlarmKit.scheduleTimer('id', config)
@@ -336,18 +348,19 @@ try {
 
 ## Platform Support
 
-| Platform | Support | Notes |
-|----------|---------|-------|
-| iOS 26+ | Full support | All AlarmKit features available |
-| iOS 15.1-25 | Compiles successfully | Returns `isSupported: false`, methods no-op |
-| iOS < 15.1 | Not supported | Library requires iOS 15.1+ |
-| Android | Returns `isSupported: false` | Methods no-op, no crashes |
+| Platform    | Support                      | Notes                                       |
+| ----------- | ---------------------------- | ------------------------------------------- |
+| iOS 26+     | Full support                 | All AlarmKit features available             |
+| iOS 15.1-25 | Compiles successfully        | Returns `isSupported: false`, methods no-op |
+| iOS < 15.1  | Not supported                | Library requires iOS 15.1+                  |
+| Android     | Returns `isSupported: false` | Methods no-op, no crashes                   |
 
 **Your app does not need iOS 26 as minimum deployment target.** The library uses runtime checks (`@available(iOS 26.0, *)`) to gracefully handle older iOS versions.
 
 ## Example
 
 See the [example](./example) directory for a complete demo app showcasing:
+
 - Simple and advanced APIs
 - React hooks
 - Event listeners

@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.authors      = package["author"]
 
   s.platforms    = { :ios => "15.1" }
-  s.source       = { :git => "https://github.com/sauravhiremath/react-native-alarmkit.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/sauravhiremath/react-native-ios-alarmkit.git", :tag => "#{s.version}" }
 
   s.source_files = [
     # Implementation (Swift)

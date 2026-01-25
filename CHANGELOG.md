@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of react-native-alarmkit
+- Initial release of react-native-ios-alarmkit
 - iOS 26+ AlarmKit wrapper with full API support
 - Schedule alarms with fixed dates or recurring schedules
 - Countdown timers with custom durations
@@ -55,4 +55,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation and Live Activity setup guide
 - Example React Native app demonstrating all features
 - Built with Nitro Modules for optimal performance
-

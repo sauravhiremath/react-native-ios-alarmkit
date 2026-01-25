@@ -1,5 +1,5 @@
 {
-  "name": "react-native-alarmkit",
+  "name": "react-native-ios-alarmkit",
   "version": "0.4.0",
   "description": "React Native wrapper for iOS AlarmKit framework",
   "main": "lib/index",
@@ -46,14 +46,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sauravhiremath/react-native-alarmkit.git"
+    "url": "git+https://github.com/sauravhiremath/react-native-ios-alarmkit.git"
   },
   "author": "Saurav M. Hiremath",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sauravhiremath/react-native-alarmkit/issues"
+    "url": "https://github.com/sauravhiremath/react-native-ios-alarmkit/issues"
   },
-  "homepage": "https://github.com/sauravhiremath/react-native-alarmkit#readme",
+  "homepage": "https://github.com/sauravhiremath/react-native-ios-alarmkit#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

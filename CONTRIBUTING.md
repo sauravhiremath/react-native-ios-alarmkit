@@ -5,8 +5,8 @@ We welcome contributions! Here's how to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/yourusername/react-native-alarmkit.git
-cd react-native-alarmkit
+git clone https://github.com/sauravhiremath/react-native-ios-alarmkit.git
+cd react-native-ios-alarmkit
 nvm use
 yarn install
 yarn specs
@@ -39,6 +39,7 @@ yarn specs      # Regenerate native specs after *.nitro.ts changes
 ## Testing
 
 Test on iOS 26+ device/simulator:
+
 ```bash
 cd example
 yarn install
@@ -47,6 +48,7 @@ yarn ios
 ```
 
 Test on earlier versions of iOS (< 26):
+
 - Build should not fail
 - The api calls should be a no-op, w/o failures
 
