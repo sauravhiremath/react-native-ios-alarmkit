@@ -74,7 +74,7 @@ export const AlarmKit = {
 
     return AlarmKitManager.shared.schedule(id, {
       countdownDuration: {
-        preAlert: 60,
+        preAlert: 0,
         postAlert: config.snoozeDuration || 540,
       },
       schedule: {
