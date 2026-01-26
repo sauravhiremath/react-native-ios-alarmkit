@@ -31,7 +31,10 @@ export const AlarmKit = {
     return AlarmKitManager.shared.requestAuthorization()
   },
 
-  async scheduleTimer(id: string, config: SimpleTimerConfig): Promise<void> {
+  async scheduleTimer(
+    id: string,
+    config: SimpleTimerConfig
+  ): Promise<Alarm | null> {
     const stopButton = createDefaultButton('Stop', '#FFFFFF', 'stop.circle')
     const secondaryButton = config.snoozeEnabled
       ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
@@ -60,7 +63,10 @@ export const AlarmKit = {
     })
   },
 
-  async scheduleAlarm(id: string, config: SimpleAlarmConfig): Promise<void> {
+  async scheduleAlarm(
+    id: string,
+    config: SimpleAlarmConfig
+  ): Promise<Alarm | null> {
     const stopButton = createDefaultButton('Stop', '#FFFFFF', 'stop.circle')
     const secondaryButton = config.snoozeEnabled
       ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')

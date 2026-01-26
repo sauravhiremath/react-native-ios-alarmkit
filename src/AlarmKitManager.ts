@@ -23,8 +23,16 @@ class AlarmKitManagerClass {
     return AlarmKitModule.requestAuthorization()
   }
 
-  async schedule(id: string, configuration: AlarmConfiguration): Promise<void> {
-    return AlarmKitModule.schedule(id, JSON.stringify(configuration))
+  async schedule(
+    id: string,
+    configuration: AlarmConfiguration
+  ): Promise<Alarm | null> {
+    const json = await AlarmKitModule.schedule(
+      id,
+      JSON.stringify(configuration)
+    )
+    if (!json) return null
+    return JSON.parse(json)
   }
 
   async cancel(id: string): Promise<void> {

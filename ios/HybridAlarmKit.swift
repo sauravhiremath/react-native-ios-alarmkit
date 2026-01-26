@@ -64,7 +64,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   
   // NOTE: schedule(id:configuration:) is an async throwing method.
   // We use Promise.async to properly await the async operation.
-  func schedule(id: String, configJson: String) throws -> Promise<Void> {
+  func schedule(id: String, configJson: String) throws -> Promise<String> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
       return Promise.async { [self] in
@@ -73,11 +73,12 @@ class HybridAlarmKit: HybridAlarmKitSpec {
         }
         
         let config = try self.parseConfiguration(configJson)
-        let _ = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
+        let alarm = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
+        return self.encodeAlarmToJson(alarm)
       }
     }
     #endif
-    return Promise.resolved(withResult: ())
+    return Promise.resolved(withResult: "")
   }
   
   // NOTE: cancel/stop/pause/resume/countdown are synchronous (not async) methods
@@ -246,6 +247,17 @@ class HybridAlarmKit: HybridAlarmKitSpec {
       ) : nil,
       schedule: alarm.schedule != nil ? scheduleToData(alarm.schedule!) : nil
     )
+  }
+  
+  @available(iOS 26.0, *)
+  private func encodeAlarmToJson(_ alarm: Alarm) -> String {
+    let encoded = encodeAlarm(alarm)
+    let encoder = JSONEncoder()
+    guard let data = try? encoder.encode(encoded),
+          let json = String(data: data, encoding: .utf8) else {
+      return ""
+    }
+    return json
   }
   
   @available(iOS 26.0, *)

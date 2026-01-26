@@ -12,7 +12,8 @@ class HybridAlarmKit : HybridAlarmKitSpec() {
   
   override suspend fun requestAuthorization(): Boolean = false
   
-  override suspend fun schedule(id: String, configJson: String) {
+  override suspend fun schedule(id: String, configJson: String): String {
+    return ""
   }
   
   override suspend fun cancel(id: String) {

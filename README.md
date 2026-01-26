@@ -77,6 +77,7 @@ await AlarmKit.scheduleTimer(timerId, {
 })
 
 // Schedule a recurring alarm
+// Scheduling with same ID again - the lib first calls delete() and then creates a new one
 const alarmId = crypto.randomUUID()
 await AlarmKit.scheduleAlarm(alarmId, {
   hour: 7,
