@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react'
 import { AlarmKitManager } from './AlarmKitManager'
 import type { Alarm, AuthorizationState } from './types'
+import { AlarmKitError } from './types'
 
 export interface UseAlarmsResult {
   alarms: Alarm[]
-  error: Error | null
+  error: AlarmKitError | null
   isLoading: boolean
 }
 
 export interface UseAuthorizationResult {
   state: AuthorizationState
-  error: Error | null
+  error: AlarmKitError | null
   isLoading: boolean
 }
 
 export function useAlarms(): UseAlarmsResult {
   const [alarms, setAlarms] = useState<Alarm[]>([])
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState<AlarmKitError | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function useAlarms(): UseAlarmsResult {
         setIsLoading(false)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)))
+        setError(AlarmKitError.fromError(err))
         setIsLoading(false)
       })
 
@@ -55,7 +56,7 @@ export function useAlarms(): UseAlarmsResult {
 
 export function useAuthorizationState(): UseAuthorizationResult {
   const [state, setState] = useState<AuthorizationState>('notDetermined')
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState<AlarmKitError | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export function useAuthorizationState(): UseAuthorizationResult {
         setIsLoading(false)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)))
+        setError(AlarmKitError.fromError(err))
         setIsLoading(false)
       })
 

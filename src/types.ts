@@ -11,6 +11,75 @@ export type Weekday =
 
 export type SecondaryButtonBehavior = 'countdown' | 'custom'
 
+export const AlarmKitErrorCode = {
+  INVALID_UUID: 'INVALID_UUID',
+  INVALID_JSON: 'INVALID_JSON',
+  INVALID_CONFIGURATION: 'INVALID_CONFIGURATION',
+  ALARM_NOT_FOUND: 'ALARM_NOT_FOUND',
+  MAXIMUM_LIMIT_REACHED: 'MAXIMUM_LIMIT_REACHED',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  ALARM_EXISTS: 'ALARM_EXISTS',
+  UNKNOWN: 'UNKNOWN',
+} as const
+
+export type AlarmKitErrorCodeType =
+  (typeof AlarmKitErrorCode)[keyof typeof AlarmKitErrorCode]
+
+export interface AlarmKitErrorInfo {
+  code: AlarmKitErrorCodeType
+  message: string
+  domain?: string
+  nativeCode?: number
+}
+
+export class AlarmKitError extends Error {
+  public readonly code: AlarmKitErrorCodeType
+  public readonly domain?: string
+  public readonly nativeCode?: number
+  public readonly nativeError?: string
+
+  constructor(info: AlarmKitErrorInfo, nativeError?: string) {
+    super(info.message)
+    this.name = 'AlarmKitError'
+    this.code = info.code
+    this.domain = info.domain
+    this.nativeCode = info.nativeCode
+    this.nativeError = nativeError
+
+    Object.setPrototypeOf(this, AlarmKitError.prototype)
+  }
+
+  static fromError(error: unknown): AlarmKitError {
+    if (error instanceof AlarmKitError) {
+      return error
+    }
+
+    const errorString = String(error)
+
+    try {
+      const jsonMatch = errorString.match(/\{.*\}/)
+      if (jsonMatch) {
+        const errorInfo = JSON.parse(jsonMatch[0]) as AlarmKitErrorInfo
+        return new AlarmKitError(errorInfo, errorString)
+      }
+    } catch {
+      // Failed to parse, fall through to default
+    }
+
+    return new AlarmKitError(
+      {
+        code: AlarmKitErrorCode.UNKNOWN,
+        message: errorString,
+      },
+      errorString
+    )
+  }
+
+  toString(): string {
+    return `AlarmKitError [${this.code}]: ${this.message}`
+  }
+}
+
 export interface AlarmButton {
   text: string
   textColor: string

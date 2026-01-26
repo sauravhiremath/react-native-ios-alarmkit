@@ -40,7 +40,7 @@ export const AlarmKit = {
       ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
       : undefined
 
-    return AlarmKitManager.shared.schedule(id, {
+    return AlarmKitManager.shared.scheduleOrReschedule(id, {
       countdownDuration: {
         preAlert: config.duration,
         postAlert: config.snoozeDuration || 300,
@@ -72,10 +72,10 @@ export const AlarmKit = {
       ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
       : undefined
 
-    return AlarmKitManager.shared.schedule(id, {
+    return AlarmKitManager.shared.scheduleOrReschedule(id, {
       countdownDuration: {
         preAlert: 0,
-        postAlert: config.snoozeDuration || 540,
+        postAlert: config.snoozeEnabled ? config.snoozeDuration || 0 : 0,
       },
       schedule: {
         type: 'relative',
@@ -91,9 +91,6 @@ export const AlarmKit = {
           secondaryButtonBehavior: config.snoozeEnabled
             ? 'countdown'
             : undefined,
-        },
-        countdown: {
-          title: 'Alarm in...',
         },
       },
       tintColor: config.tintColor,

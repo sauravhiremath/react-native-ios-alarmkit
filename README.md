@@ -45,12 +45,6 @@ No setup required. Returns `isSupported: false`.
 
 Requires native code. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild`.
 
-## WIP: Widget Extension Required for Countdown
-
-If your alarm uses countdown presentation (timer UI before alerting), you **must** implement a Widget Extension. Without it, iOS may unexpectedly dismiss alarms and fail to alert.
-
-See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md).
-
 ## Usage
 
 ### Simple API
@@ -145,6 +139,27 @@ const authSub = AlarmKit.addAuthorizationListener((state) => {
 alarmsSub.remove()
 authSub.remove()
 ```
+
+## Widget Extension / Live Activities Requirements
+
+A Widget Extension is **required** for the following features:
+
+| Feature                         | Widget Extension Required? | Notes                                                                                              |
+| ------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `AlarmKit.scheduleAlarm()`      | **No**                     | Works without Widget Extension - basic alarm functionality                                         |
+| `AlarmKit.scheduleTimer()`      | **Yes**                    | Timers show countdown UI in Dynamic Island, Lock Screen, and StandBy                               |
+| Snooze with countdown UI        | **Yes (recommended)**      | Without Widget Extension, snooze may work but countdown UI won't display properly                  |
+| Advanced configs with countdown | **Yes**                    | Custom alarms using `AlarmKitManager.shared.schedule()` with `countdown` or `paused` presentations |
+
+**What happens without Widget Extension:**
+
+- `scheduleAlarm()`: Works correctly - alarms alert at scheduled time
+- `scheduleTimer()`: iOS may unexpectedly dismiss timers and fail to alert
+- Countdown presentations: System may not show Live Activity and dismiss alarms ([reference](https://developer.apple.com/documentation/alarmkit/scheduling-an-alarm-with-alarmkit#Create-a-Widget-Extension-for-Live-Activities))
+
+**For advanced configurations** with countdown presentations (pre-alert countdown, custom timers, etc.), use `AlarmKitManager.shared.schedule()` directly with full `AlarmConfiguration` and ensure your app has a Widget Extension.
+
+See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md) for implementation details.
 
 ### Advanced API
 
@@ -275,7 +290,7 @@ Subscribe to authorization changes.
 ```typescript
 interface UseAlarmsResult {
   alarms: Alarm[]
-  error: Error | null
+  error: AlarmKitError | null
   isLoading: boolean
 }
 ```
@@ -285,7 +300,7 @@ interface UseAlarmsResult {
 ```typescript
 interface UseAuthorizationResult {
   state: AuthorizationState
-  error: Error | null
+  error: AlarmKitError | null
   isLoading: boolean
 }
 ```
@@ -378,6 +393,46 @@ interface Subscription {
 ```
 
 ## Errors
+
+All AlarmKit methods throw `AlarmKitError` on failure, with structured error codes for programmatic handling:
+
+```typescript
+import {
+  AlarmKit,
+  AlarmKitError,
+  AlarmKitErrorCode,
+} from 'react-native-ios-alarmkit'
+
+try {
+  await AlarmKit.cancel(alarmId)
+} catch (error) {
+  if (error instanceof AlarmKitError) {
+    console.log('Error code:', error.code)
+    console.log('Error message:', error.message)
+    console.log('Native error:', error.nativeError)
+
+    // Check specific error types
+    if (error.code === AlarmKitErrorCode.ALARM_NOT_FOUND) {
+      console.log('Alarm does not exist')
+    } else if (error.code === AlarmKitErrorCode.MAXIMUM_LIMIT_REACHED) {
+      console.log('Too many alarms scheduled')
+    }
+  }
+}
+```
+
+### Error Codes
+
+| Code                    | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `INVALID_UUID`          | The alarm ID is not a valid UUID               |
+| `INVALID_JSON`          | Configuration JSON is malformed                |
+| `INVALID_CONFIGURATION` | Configuration validation failed                |
+| `ALARM_NOT_FOUND`       | Alarm doesn't exist (cancel/stop/pause/resume) |
+| `MAXIMUM_LIMIT_REACHED` | iOS alarm limit reached                        |
+| `UNAUTHORIZED`          | User denied alarm permission                   |
+| `ALARM_EXISTS`          | Alarm with this ID already exists              |
+| `UNKNOWN`               | Unrecognized error from iOS                    |
 
 ### `maximumLimitReached`
 

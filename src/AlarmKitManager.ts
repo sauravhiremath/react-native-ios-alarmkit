@@ -6,6 +6,7 @@ import type {
   AlarmConfiguration,
   Subscription,
 } from './types'
+import { AlarmKitError, AlarmKitErrorCode } from './types'
 
 const AlarmKitModule = NitroModules.createHybridObject<AlarmKitSpec>('AlarmKit')
 
@@ -15,49 +16,85 @@ class AlarmKitManagerClass {
   }
 
   async getAuthorizationState(): Promise<AuthorizationState> {
-    const state = await AlarmKitModule.getAuthorizationState()
-    return state as AuthorizationState
+    try {
+      const state = await AlarmKitModule.getAuthorizationState()
+      return state as AuthorizationState
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async requestAuthorization(): Promise<boolean> {
-    return AlarmKitModule.requestAuthorization()
+    try {
+      return await AlarmKitModule.requestAuthorization()
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async schedule(
     id: string,
     configuration: AlarmConfiguration
   ): Promise<Alarm | null> {
-    const json = await AlarmKitModule.schedule(
-      id,
-      JSON.stringify(configuration)
-    )
-    if (!json) return null
-    return JSON.parse(json)
+    try {
+      const json = await AlarmKitModule.schedule(
+        id,
+        JSON.stringify(configuration)
+      )
+      if (!json) return null
+      return JSON.parse(json)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async cancel(id: string): Promise<void> {
-    return AlarmKitModule.cancel(id)
+    try {
+      return await AlarmKitModule.cancel(id)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async stop(id: string): Promise<void> {
-    return AlarmKitModule.stop(id)
+    try {
+      return await AlarmKitModule.stop(id)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async pause(id: string): Promise<void> {
-    return AlarmKitModule.pause(id)
+    try {
+      return await AlarmKitModule.pause(id)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async resume(id: string): Promise<void> {
-    return AlarmKitModule.resume(id)
+    try {
+      return await AlarmKitModule.resume(id)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async countdown(id: string): Promise<void> {
-    return AlarmKitModule.countdown(id)
+    try {
+      return await AlarmKitModule.countdown(id)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   async getAlarms(): Promise<Alarm[]> {
-    const json = await AlarmKitModule.getAlarms()
-    return JSON.parse(json)
+    try {
+      const json = await AlarmKitModule.getAlarms()
+      return JSON.parse(json)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
   }
 
   addAlarmUpdatesListener(callback: (alarms: Alarm[]) => void): Subscription {
@@ -77,6 +114,42 @@ class AlarmKitManagerClass {
     })
     return {
       remove: () => AlarmKitModule.removeAuthorizationListener(id),
+    }
+  }
+
+  async scheduleOrReschedule(
+    id: string,
+    configuration: AlarmConfiguration
+  ): Promise<Alarm | null> {
+    try {
+      await this.cancel(id)
+    } catch (error) {
+      if (error instanceof AlarmKitError) {
+        if (
+          error.code !== AlarmKitErrorCode.ALARM_NOT_FOUND &&
+          error.code !== AlarmKitErrorCode.UNKNOWN
+        ) {
+          throw error
+        }
+      }
+    }
+
+    return this.schedule(id, configuration)
+  }
+
+  async cancelIfExists(id: string): Promise<void> {
+    try {
+      await this.cancel(id)
+    } catch (error) {
+      if (error instanceof AlarmKitError) {
+        if (
+          error.code === AlarmKitErrorCode.ALARM_NOT_FOUND ||
+          error.code === AlarmKitErrorCode.UNKNOWN
+        ) {
+          return
+        }
+      }
+      throw error
     }
   }
 }

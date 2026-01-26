@@ -10,6 +10,24 @@ import AlarmKit
 import ActivityKit
 #endif
 
+enum AlarmKitErrorCode: String {
+  case invalidUUID = "INVALID_UUID"
+  case invalidJSON = "INVALID_JSON"
+  case invalidConfiguration = "INVALID_CONFIGURATION"
+  case alarmNotFound = "ALARM_NOT_FOUND"
+  case maximumLimitReached = "MAXIMUM_LIMIT_REACHED"
+  case unauthorized = "UNAUTHORIZED"
+  case alarmExists = "ALARM_EXISTS"
+  case unknown = "UNKNOWN"
+}
+
+struct AlarmKitErrorInfo: Codable {
+  let code: String
+  let message: String
+  let domain: String?
+  let nativeCode: Int?
+}
+
 class HybridAlarmKit: HybridAlarmKitSpec {
   var memorySize: Int {
     return MemoryLayout<HybridAlarmKit>.size
@@ -69,12 +87,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     if #available(iOS 26.0, *) {
       return Promise.async { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        let config = try self.parseConfiguration(configJson)
-        let alarm = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
-        return self.encodeAlarmToJson(alarm)
+        do {
+          let config = try self.parseConfiguration(configJson)
+          let alarm = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
+          return self.encodeAlarmToJson(alarm)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -87,12 +112,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   func cancel(id: String) throws -> Promise<Void> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.parallel {
+      return Promise.parallel { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        try AlarmManager.shared.cancel(id: alarmId)
+        do {
+          try AlarmManager.shared.cancel(id: alarmId)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -102,12 +134,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   func stop(id: String) throws -> Promise<Void> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.parallel {
+      return Promise.parallel { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        try AlarmManager.shared.stop(id: alarmId)
+        do {
+          try AlarmManager.shared.stop(id: alarmId)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -117,12 +156,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   func pause(id: String) throws -> Promise<Void> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.parallel {
+      return Promise.parallel { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        try AlarmManager.shared.pause(id: alarmId)
+        do {
+          try AlarmManager.shared.pause(id: alarmId)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -132,12 +178,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   func resume(id: String) throws -> Promise<Void> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.parallel {
+      return Promise.parallel { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        try AlarmManager.shared.resume(id: alarmId)
+        do {
+          try AlarmManager.shared.resume(id: alarmId)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -147,12 +200,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   func countdown(id: String) throws -> Promise<Void> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.parallel {
+      return Promise.parallel { [self] in
         guard let alarmId = UUID(uuidString: id) else {
-          throw NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"])
+          throw self.wrapError(
+            NSError(domain: "AlarmKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID"]),
+            code: .invalidUUID
+          )
         }
         
-        try AlarmManager.shared.countdown(id: alarmId)
+        do {
+          try AlarmManager.shared.countdown(id: alarmId)
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -169,12 +229,16 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
       return Promise.parallel { [self] in
-        let alarms = try AlarmManager.shared.alarms
-        let result = alarms.map { self.encodeAlarm($0) }
-        
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(result)
-        return String(data: data, encoding: .utf8) ?? "[]"
+        do {
+          let alarms = try AlarmManager.shared.alarms
+          let result = alarms.map { self.encodeAlarm($0) }
+          
+          let encoder = JSONEncoder()
+          let data = try encoder.encode(result)
+          return String(data: data, encoding: .utf8) ?? "[]"
+        } catch {
+          throw self.wrapError(error)
+        }
       }
     }
     #endif
@@ -234,6 +298,79 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   // MARK: - Private Helper Methods
+  
+  private func wrapError(_ error: Error, code: AlarmKitErrorCode? = nil) -> NSError {
+    let errorInfo: AlarmKitErrorInfo
+    
+    if let nsError = error as NSError? {
+      let detectedCode = detectErrorCode(nsError)
+      let finalCode = code ?? detectedCode
+      
+      errorInfo = AlarmKitErrorInfo(
+        code: finalCode.rawValue,
+        message: nsError.localizedDescription.isEmpty ? nsError.description : nsError.localizedDescription,
+        domain: nsError.domain,
+        nativeCode: nsError.code
+      )
+    } else {
+      errorInfo = AlarmKitErrorInfo(
+        code: (code ?? .unknown).rawValue,
+        message: error.localizedDescription,
+        domain: nil,
+        nativeCode: nil
+      )
+    }
+    
+    let encoder = JSONEncoder()
+    if let jsonData = try? encoder.encode(errorInfo),
+       let jsonString = String(data: jsonData, encoding: .utf8) {
+      return NSError(
+        domain: "AlarmKit",
+        code: 1000,
+        userInfo: [NSLocalizedDescriptionKey: jsonString]
+      )
+    }
+    
+    return NSError(
+      domain: "AlarmKit",
+      code: 1000,
+      userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
+    )
+  }
+  
+  private func detectErrorCode(_ error: NSError) -> AlarmKitErrorCode {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      if error.domain == "com.apple.AlarmKit.Alarm" || error.domain.contains("AlarmKit") {
+        if let alarmError = error as? AlarmManager.AlarmError {
+          switch alarmError {
+          case .maximumLimitReached:
+            return .maximumLimitReached
+          @unknown default:
+            return .unknown
+          }
+        }
+        
+        switch error.code {
+        case 1:
+          return .invalidUUID
+        case 2:
+          return .invalidJSON
+        case 3, 4:
+          return .invalidConfiguration
+        default:
+          if error.localizedDescription.contains("not found") || 
+             error.localizedDescription.contains("does not exist") {
+            return .alarmNotFound
+          }
+          return .unknown
+        }
+      }
+    }
+    #endif
+    
+    return .unknown
+  }
   
   #if canImport(AlarmKit)
   @available(iOS 26.0, *)
@@ -342,57 +479,66 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   @available(iOS 26.0, *)
   private func parseConfiguration(_ json: String) throws -> AlarmManager.AlarmConfiguration<EmptyMetadata> {
     guard let data = json.data(using: .utf8) else {
-      throw NSError(domain: "AlarmKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])
+      throw wrapError(
+        NSError(domain: "AlarmKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"]),
+        code: .invalidJSON
+      )
     }
     
-    let decoder = JSONDecoder()
-    let config = try decoder.decode(AlarmConfigurationData.self, from: data)
-    
-    // Create countdown duration
-    let countdownDuration = Alarm.CountdownDuration(
-      preAlert: TimeInterval(config.countdownDuration.preAlert),
-      postAlert: TimeInterval(config.countdownDuration.postAlert)
-    )
-    
-    // Create presentation
-    let alertPresentation = try createAlertPresentation(config.presentation.alert)
-    var presentation = AlarmPresentation(alert: alertPresentation)
-    
-    if let countdown = config.presentation.countdown {
-      presentation.countdown = try createCountdownPresentation(countdown)
+    do {
+      let decoder = JSONDecoder()
+      let config = try decoder.decode(AlarmConfigurationData.self, from: data)
+      
+      // Create countdown duration
+      let preAlertValue = config.countdownDuration.preAlert > 0 ? TimeInterval(config.countdownDuration.preAlert) : nil
+      let postAlertValue = config.countdownDuration.postAlert > 0 ? TimeInterval(config.countdownDuration.postAlert) : nil
+      
+      let countdownDuration: Alarm.CountdownDuration? = (preAlertValue != nil || postAlertValue != nil) 
+        ? Alarm.CountdownDuration(preAlert: preAlertValue, postAlert: postAlertValue)
+        : nil
+      
+      // Create presentation
+      let alertPresentation = try createAlertPresentation(config.presentation.alert)
+      var presentation = AlarmPresentation(alert: alertPresentation)
+      
+      if let countdown = config.presentation.countdown {
+        presentation.countdown = try createCountdownPresentation(countdown)
+      }
+      
+      if let paused = config.presentation.paused {
+        presentation.paused = try createPausedPresentation(paused)
+      }
+      
+      // Parse tint color
+      let tintColor: Color = config.tintColor != nil ? parseColor(config.tintColor!) : .blue
+      
+      // Create attributes with empty metadata
+      let attributes = AlarmAttributes<EmptyMetadata>(
+        presentation: presentation,
+        metadata: EmptyMetadata(),
+        tintColor: tintColor
+      )
+      
+      // Create schedule if provided
+      let schedule: Alarm.Schedule? = config.schedule != nil ? try createSchedule(config.schedule!) : nil
+      
+      // Parse sound - explicit type required for enum inference
+      let sound: AlertConfiguration.AlertSound = config.soundName != nil ? .named(config.soundName!) : .default
+      
+      // Create alarm configuration with all parameters
+      let alarmConfig = AlarmManager.AlarmConfiguration(
+        countdownDuration: countdownDuration,
+        schedule: schedule,
+        attributes: attributes,
+        stopIntent: nil,
+        secondaryIntent: nil,
+        sound: sound
+      )
+      
+      return alarmConfig
+    } catch {
+      throw wrapError(error, code: .invalidConfiguration)
     }
-    
-    if let paused = config.presentation.paused {
-      presentation.paused = try createPausedPresentation(paused)
-    }
-    
-    // Parse tint color
-    let tintColor: Color = config.tintColor != nil ? parseColor(config.tintColor!) : .blue
-    
-    // Create attributes with empty metadata
-    let attributes = AlarmAttributes<EmptyMetadata>(
-      presentation: presentation,
-      metadata: EmptyMetadata(),
-      tintColor: tintColor
-    )
-    
-    // Create schedule if provided
-    let schedule: Alarm.Schedule? = config.schedule != nil ? try createSchedule(config.schedule!) : nil
-    
-    // Parse sound - explicit type required for enum inference
-    let sound: AlertConfiguration.AlertSound = config.soundName != nil ? .named(config.soundName!) : .default
-    
-    // Create alarm configuration with all parameters
-    let alarmConfig = AlarmManager.AlarmConfiguration(
-      countdownDuration: countdownDuration,
-      schedule: schedule,
-      attributes: attributes,
-      stopIntent: nil,
-      secondaryIntent: nil,
-      sound: sound
-    )
-    
-    return alarmConfig
   }
   
   @available(iOS 26.0, *)
@@ -474,13 +620,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   private func createSchedule(_ data: AlarmScheduleData) throws -> Alarm.Schedule {
     if data.type == "fixed" {
       guard let timestamp = data.date else {
-        throw NSError(domain: "AlarmKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Fixed schedule requires date"])
+        throw wrapError(
+          NSError(domain: "AlarmKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Fixed schedule requires date"]),
+          code: .invalidConfiguration
+        )
       }
       let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000.0)
       return .fixed(date)
     } else {
       guard let hour = data.hour, let minute = data.minute else {
-        throw NSError(domain: "AlarmKit", code: 4, userInfo: [NSLocalizedDescriptionKey: "Relative schedule requires hour and minute"])
+        throw wrapError(
+          NSError(domain: "AlarmKit", code: 4, userInfo: [NSLocalizedDescriptionKey: "Relative schedule requires hour and minute"]),
+          code: .invalidConfiguration
+        )
       }
       
       let time = Alarm.Schedule.Relative.Time(hour: hour, minute: minute)
