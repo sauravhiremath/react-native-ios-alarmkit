@@ -160,6 +160,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   
   private var alarmListenerTasks: [String: Task<Void, Never>] = [:]
   private var authListenerTasks: [String: Task<Void, Never>] = [:]
+  private let listenerLock = NSLock()
   
   // NOTE: AlarmManager.shared.alarms is a synchronous throwing property getter.
   // JSON encoding is also synchronous. We use Promise.parallel to avoid blocking.
@@ -189,7 +190,9 @@ class HybridAlarmKit: HybridAlarmKitSpec {
           callback(encoded)
         }
       }
+      listenerLock.lock()
       alarmListenerTasks[subscriptionId] = task
+      listenerLock.unlock()
       return subscriptionId
     }
     #endif
@@ -197,8 +200,10 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   func removeAlarmsListener(subscriptionId: String) throws {
-    alarmListenerTasks[subscriptionId]?.cancel()
-    alarmListenerTasks.removeValue(forKey: subscriptionId)
+    listenerLock.lock()
+    let task = alarmListenerTasks.removeValue(forKey: subscriptionId)
+    listenerLock.unlock()
+    task?.cancel()
   }
   
   func addAuthorizationListener(callback: @escaping (String) -> Void) throws -> String {
@@ -211,7 +216,9 @@ class HybridAlarmKit: HybridAlarmKitSpec {
           callback(stateString)
         }
       }
+      listenerLock.lock()
       authListenerTasks[subscriptionId] = task
+      listenerLock.unlock()
       return subscriptionId
     }
     #endif
@@ -219,8 +226,10 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   func removeAuthorizationListener(subscriptionId: String) throws {
-    authListenerTasks[subscriptionId]?.cancel()
-    authListenerTasks.removeValue(forKey: subscriptionId)
+    listenerLock.lock()
+    let task = authListenerTasks.removeValue(forKey: subscriptionId)
+    listenerLock.unlock()
+    task?.cancel()
   }
   
   // MARK: - Private Helper Methods

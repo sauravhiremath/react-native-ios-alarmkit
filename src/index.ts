@@ -132,6 +132,11 @@ export const AlarmKit = {
 
 export { AlarmKitManager } from './AlarmKitManager'
 export { AlarmConfigurationFactory } from './AlarmConfiguration'
-export { useAlarms, useAuthorizationState } from './hooks'
+export {
+  useAlarms,
+  useAuthorizationState,
+  type UseAlarmsResult,
+  type UseAuthorizationResult,
+} from './hooks'
 export * from './types'
 export default AlarmKit

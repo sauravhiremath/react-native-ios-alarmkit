@@ -27,21 +27,29 @@ yarn add react-native-ios-alarmkit react-native-nitro-modules
 <string>This app needs to schedule alarms to remind you at important times.</string>
 ```
 
+> **Required.** If missing or empty, AlarmKit cannot schedule alarms.
+
 2. Install pods:
 
 ```bash
 cd ios && pod install
 ```
 
-AlarmKit only works on iOS 26+. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+ - version detection is automatic.
+AlarmKit only works on iOS 26+. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+.
 
 ### Android
 
-No setup required. Returns `isSupported: false` on Android.
+No setup required. Returns `isSupported: false`.
 
 ### Expo
 
 Requires native code. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild`.
+
+## WIP: Widget Extension Required for Countdown
+
+If your alarm uses countdown presentation (timer UI before alerting), you **must** implement a Widget Extension. Without it, iOS may unexpectedly dismiss alarms and fail to alert.
+
+See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md).
 
 ## Usage
 
@@ -59,7 +67,7 @@ if (!AlarmKit.isSupported) {
 const authorized = await AlarmKit.requestAuthorization()
 
 // Schedule a timer (5 minutes)
-const timerId = uuid()
+const timerId = crypto.randomUUID()
 await AlarmKit.scheduleTimer(timerId, {
   duration: 300,
   title: 'Timer Done!',
@@ -69,7 +77,7 @@ await AlarmKit.scheduleTimer(timerId, {
 })
 
 // Schedule a recurring alarm
-const alarmId = uuid()
+const alarmId = crypto.randomUUID()
 await AlarmKit.scheduleAlarm(alarmId, {
   hour: 7,
   minute: 0,
@@ -90,12 +98,22 @@ await AlarmKit.resume(timerId)
 
 ### React Hooks
 
+Hooks return objects with `error` and `isLoading` states:
+
 ```typescript
 import { useAlarms, useAuthorizationState } from 'react-native-ios-alarmkit'
 
 function MyComponent() {
-  const authState = useAuthorizationState()
-  const alarms = useAlarms()
+  const { state: authState, error: authError, isLoading: authLoading } = useAuthorizationState()
+  const { alarms, error: alarmsError, isLoading: alarmsLoading } = useAlarms()
+
+  if (authLoading || alarmsLoading) {
+    return <Text>Loading...</Text>
+  }
+
+  if (authError || alarmsError) {
+    return <Text>Error: {authError?.message || alarmsError?.message}</Text>
+  }
 
   return (
     <View>
@@ -180,7 +198,7 @@ const config = AlarmConfigurationFactory.timer({
   sound: 'custom-sound',
 })
 
-const id = uuid()
+const id = crypto.randomUUID()
 await AlarmKitManager.shared.schedule(id, config)
 await AlarmKitManager.shared.countdown(id)
 
@@ -207,7 +225,7 @@ Returns `'notDetermined'`, `'authorized'`, or `'denied'`.
 
 #### `AlarmKit.requestAuthorization(): Promise<boolean>`
 
-Request permission. Returns `true` if granted.
+Request permission. Returns `true` if granted. If not called, AlarmKit auto-requests on first `schedule()`.
 
 #### `AlarmKit.scheduleTimer(id: string, config: SimpleTimerConfig): Promise<void>`
 
@@ -248,6 +266,28 @@ Subscribe to alarm changes.
 #### `AlarmKit.addAuthorizationListener(callback): Subscription`
 
 Subscribe to authorization changes.
+
+### Hooks
+
+#### `useAlarms(): UseAlarmsResult`
+
+```typescript
+interface UseAlarmsResult {
+  alarms: Alarm[]
+  error: Error | null
+  isLoading: boolean
+}
+```
+
+#### `useAuthorizationState(): UseAuthorizationResult`
+
+```typescript
+interface UseAuthorizationResult {
+  state: AuthorizationState
+  error: Error | null
+  isLoading: boolean
+}
+```
 
 ### Advanced API
 
@@ -336,9 +376,15 @@ interface Subscription {
 }
 ```
 
-## Live Activities
+## Errors
 
-Custom countdown UI requires a Widget Extension. See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md).
+### `maximumLimitReached`
+
+iOS limits the number of scheduled alarms per app. If you hit this limit, `schedule()` throws. Cancel unused alarms before scheduling new ones.
+
+### `Invalid UUID`
+
+The `id` parameter must be a valid UUID string. Use `crypto.randomUUID()`.
 
 ## Platform Support
 

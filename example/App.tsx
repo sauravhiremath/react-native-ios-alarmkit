@@ -19,10 +19,22 @@ import AlarmKit, {
 } from 'react-native-ios-alarmkit'
 
 function App(): React.JSX.Element {
-  const authState = useAuthorizationState()
-  const alarms = useAlarms()
+  const { state: authState, error: authError } = useAuthorizationState()
+  const { alarms, error: alarmsError } = useAlarms()
   const [minutes, setMinutes] = useState('5')
   const [useAdvancedAPI, setUseAdvancedAPI] = useState(false)
+
+  React.useEffect(() => {
+    if (authError) {
+      Alert.alert('Auth Error', authError.message)
+    }
+  }, [authError])
+
+  React.useEffect(() => {
+    if (alarmsError) {
+      Alert.alert('Alarms Error', alarmsError.message)
+    }
+  }, [alarmsError])
 
   const requestAuth = async () => {
     const granted = await AlarmKit.requestAuthorization()
