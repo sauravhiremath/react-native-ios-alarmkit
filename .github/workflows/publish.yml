@@ -30,9 +30,6 @@ jobs:
       - name: Run TypeScript type check
         run: yarn typecheck
 
-      - name: Build TypeScript
-        run: yarn typescript
-
       - name: Create GitHub Release
         run: gh release create ${{ github.ref_name }} --generate-notes
         env:

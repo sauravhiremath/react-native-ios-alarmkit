@@ -1,0 +1,81 @@
+# OSX
+.DS_Store
+
+# Editor
+.vscode/
+jsconfig.json
+
+# Xcode build artifacts
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
+
+# Android/IntelliJ
+.classpath
+.cxx
+.gradle
+.idea
+.project
+.settings
+local.properties
+android.iml
+
+# Example app
+example/
+
+# Ruby vendor
+example/vendor/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+
+# Expo
+.expo/
+
+# Turborepo
+.turbo/
+
+# Caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# Source files (ship lib/ only)
+src/
+
+# Git
+.git/
+.github/
+
+# Docs
+docs/
+AGENTS.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Config files not needed in package
+babel.config.js
+tsconfig.json
+context7.json
+.nvmrc
+.watchmanconfig
