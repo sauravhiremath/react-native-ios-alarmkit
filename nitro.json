@@ -1,19 +1,18 @@
 {
   "$schema": "https://nitro.margelo.com/nitro.schema.json",
-  "cxxNamespace": [
-    "alarmkit"
-  ],
+  "cxxNamespace": ["alarmkit"],
   "ios": {
     "iosModuleName": "NitroAlarmkit"
   },
   "android": {
-    "androidNamespace": [
-      "alarmkit"
-    ],
+    "androidNamespace": ["alarmkit"],
     "androidCxxLibName": "NitroAlarmkit"
   },
-  "autolinking": {},
-  "ignorePaths": [
-    "**/node_modules"
-  ]
+  "autolinking": {
+    "AlarmKit": {
+      "swift": "HybridAlarmKit",
+      "kotlin": "HybridAlarmKit"
+    }
+  },
+  "ignorePaths": ["**/node_modules"]
 }

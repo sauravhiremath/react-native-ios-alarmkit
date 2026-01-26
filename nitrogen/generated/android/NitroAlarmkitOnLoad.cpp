@@ -17,6 +17,7 @@
 
 #include "JHybridAlarmKitSpec.hpp"
 #include "JFunc_void_std__string.hpp"
+#include <NitroModules/DefaultConstructableObject.hpp>
 
 namespace margelo::nitro::alarmkit {
 
@@ -31,7 +32,14 @@ int initialize(JavaVM* vm) {
     margelo::nitro::alarmkit::JFunc_void_std__string_cxx::registerNatives();
 
     // Register Nitro Hybrid Objects
-    
+    HybridObjectRegistry::registerHybridObjectConstructor(
+      "AlarmKit",
+      []() -> std::shared_ptr<HybridObject> {
+        static DefaultConstructableObject<JHybridAlarmKitSpec::javaobject> object("com/margelo/nitro/alarmkit/HybridAlarmKit");
+        auto instance = object.create();
+        return instance->cthis()->shared();
+      }
+    );
   });
 }
 
