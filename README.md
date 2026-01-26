@@ -20,6 +20,8 @@ React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timer
 yarn add react-native-ios-alarmkit react-native-nitro-modules
 ```
 
+Autolinking is supported for React Native 0.60+ projects.
+
 ### iOS Setup
 
 1. Add the AlarmKit usage description to your `ios/YourApp/Info.plist`:
@@ -40,6 +42,10 @@ cd ios && pod install
 ### Android
 
 No additional setup required. The library will return `isSupported: false` on Android.
+
+### Expo
+
+This library requires native code and is not compatible with Expo Go. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild` to generate the native projects.
 
 ## Usage
 

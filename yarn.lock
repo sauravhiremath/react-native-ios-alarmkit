@@ -3549,7 +3549,7 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-nitrogen@^0.33.0:
+nitrogen@^0.33.2:
   version "0.33.2"
   resolved "https://registry.yarnpkg.com/nitrogen/-/nitrogen-0.33.2.tgz#22ae1b21656034c91885e091db6a57e2383e55a7"
   integrity sha512-1fypSMqDU2vnRDmI8PYH0F3/ICLgRqsKCtOyNSMX7rQsG9D7G6zINvZH0Vk0unjzTude5SN8XNFO5im4LrGCvQ==
@@ -3870,11 +3870,6 @@ react-is@^18.0.0:
   version "18.3.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e83557dc12eae63a99e003a46388b1dcbb44db7e"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
-
-react-native-nitro-modules@^0.25.0:
-  version "0.25.2"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.25.2.tgz#3d03869934854d7509c2f0dbaf4dca83d6969faf"
-  integrity sha512-rL+X0LzB8BXvpdrUE/+oZ5v4qS/1nZIq0M8Uctbvqq2q53sVCHX4995ffT8+lGIJe/f0QcBvvrEeXtBPl86iwQ==
 
 react-native-nitro-modules@^0.33.2:
   version "0.33.2"
