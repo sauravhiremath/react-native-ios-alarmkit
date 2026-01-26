@@ -46,7 +46,7 @@ function App(): React.JSX.Element {
 
     try {
       const minutesNum = parseInt(minutes, 10)
-      const id = `timer-${Date.now()}`
+      const id = crypto.randomUUID()
 
       await AlarmKit.scheduleTimer(id, {
         duration: minutesNum * 60,
@@ -74,7 +74,7 @@ function App(): React.JSX.Element {
     }
 
     try {
-      const id = `alarm-${Date.now()}`
+      const id = crypto.randomUUID()
 
       const config = AlarmConfigurationFactory.timer({
         duration: 300,

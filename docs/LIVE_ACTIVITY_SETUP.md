@@ -5,6 +5,7 @@ This guide walks you through setting up Live Activities for custom alarm countdo
 ## Overview
 
 When you schedule an alarm with countdown functionality, iOS displays a Live Activity on:
+
 - Lock Screen
 - Dynamic Island
 - StandBy mode
@@ -70,16 +71,16 @@ struct AlarmLiveActivity: Widget {
           Image(systemName: "alarm")
             .foregroundColor(context.attributes.tintColor)
         }
-        
+
         DynamicIslandExpandedRegion(.trailing) {
           Text(context.state.mode == .countdown ? "Countdown" : "Paused")
             .font(.caption)
         }
-        
+
         DynamicIslandExpandedRegion(.center) {
           countdownText(context)
         }
-        
+
         DynamicIslandExpandedRegion(.bottom) {
           if context.state.mode == .countdown {
             Text("Tap to pause")
@@ -100,24 +101,24 @@ struct AlarmLiveActivity: Widget {
       }
     }
   }
-  
+
   @ViewBuilder
   func lockScreenView(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> some View {
     VStack(spacing: 12) {
       HStack {
         Image(systemName: "alarm")
           .foregroundColor(context.attributes.tintColor)
-        
+
         Text(context.attributes.presentation.alert.title)
           .font(.headline)
           .foregroundColor(context.attributes.tintColor)
       }
-      
+
       countdownText(context)
         .font(.title)
         .monospacedDigit()
         .foregroundColor(context.attributes.tintColor)
-      
+
       if context.state.mode == .paused {
         Text("Paused")
           .font(.caption)
@@ -126,7 +127,7 @@ struct AlarmLiveActivity: Widget {
     }
     .padding()
   }
-  
+
   @ViewBuilder
   func countdownText(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> some View {
     if let date = context.state.date {
@@ -136,7 +137,7 @@ struct AlarmLiveActivity: Widget {
       Text("--:--")
     }
   }
-  
+
   func timeRemaining(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> String {
     guard let date = context.state.date else { return "--:--" }
     let interval = date.timeIntervalSince(Date.now)
@@ -179,12 +180,13 @@ You can pass custom data to your Live Activity:
 **TypeScript:**
 
 ```typescript
-await AlarmKit.schedule('cooking-timer', {
+const id = crypto.randomUUID()
+await AlarmKitManager.shared.schedule(id, {
   countdownDuration: {
     preAlert: 600,
     postAlert: 300,
   },
-  presentation: { },
+  presentation: { ... },
   metadata: {
     iconName: 'flame',
     recipeName: 'Pizza',

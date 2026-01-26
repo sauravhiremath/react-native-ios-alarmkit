@@ -1,17 +1,15 @@
 # react-native-ios-alarmkit
 
-React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timers, and countdown alerts with Live Activities on iOS 26+.
+React Native wrapper for iOS AlarmKit framework. Schedule alarms, timers, and countdown alerts with Live Activities on iOS 26+.
 
 ## Features
 
-- **Simple API** for quick timer/alarm scheduling
-- **Advanced API** with 1-1 native AlarmKit mapping
-- **React Hooks** for automatic state updates
-- **Event Listeners** for real-time alarm changes
-- Schedule alarms with fixed dates or recurring schedules
-- Countdown timers with custom durations
+- Simple API for quick timer/alarm scheduling
+- Advanced API with 1:1 native AlarmKit mapping
+- React Hooks for automatic state updates
+- Event listeners for real-time alarm changes
 - Custom alert presentations with buttons, colors, and SF Symbols
-- Live Activities support for countdown UI
+- Live Activities support
 - Silent no-op on Android and iOS < 26
 
 ## Installation
@@ -20,11 +18,9 @@ React Native wrapper for iOS AlarmKit framework. Create and manage alarms, timer
 yarn add react-native-ios-alarmkit react-native-nitro-modules
 ```
 
-Autolinking is supported for React Native 0.60+ projects.
-
 ### iOS Setup
 
-1. Add the AlarmKit usage description to your `ios/YourApp/Info.plist`:
+1. Add to `ios/YourApp/Info.plist`:
 
 ```xml
 <key>NSAlarmKitUsageDescription</key>
@@ -37,32 +33,34 @@ Autolinking is supported for React Native 0.60+ projects.
 cd ios && pod install
 ```
 
-**Note:** AlarmKit features only work on iOS 26+. On older iOS versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target any iOS version (iOS 15.1+) - the library handles version detection automatically.
+AlarmKit only works on iOS 26+. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+ - version detection is automatic.
 
 ### Android
 
-No additional setup required. The library will return `isSupported: false` on Android.
+No setup required. Returns `isSupported: false` on Android.
 
 ### Expo
 
-This library requires native code and is not compatible with Expo Go. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild` to generate the native projects.
+Requires native code. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild`.
 
 ## Usage
 
-### Simple API (Recommended for Most Users)
-
-The simple API provides easy-to-use methods for common use cases:
+### Simple API
 
 ```typescript
 import AlarmKit from 'react-native-ios-alarmkit'
 
+// Check support
 if (!AlarmKit.isSupported) {
-  console.log('AlarmKit not supported on this platform')
+  console.log('AlarmKit not supported')
 }
 
+// Request authorization
 const authorized = await AlarmKit.requestAuthorization()
 
-await AlarmKit.scheduleTimer('my-timer', {
+// Schedule a timer (5 minutes)
+const timerId = uuid()
+await AlarmKit.scheduleTimer(timerId, {
   duration: 300,
   title: 'Timer Done!',
   snoozeEnabled: true,
@@ -70,7 +68,9 @@ await AlarmKit.scheduleTimer('my-timer', {
   tintColor: '#FF6B6B',
 })
 
-await AlarmKit.scheduleAlarm('wake-up', {
+// Schedule a recurring alarm
+const alarmId = uuid()
+await AlarmKit.scheduleAlarm(alarmId, {
   hour: 7,
   minute: 0,
   weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
@@ -79,16 +79,16 @@ await AlarmKit.scheduleAlarm('wake-up', {
   tintColor: '#4A90D9',
 })
 
+// Get all alarms
 const alarms = await AlarmKit.getAlarms()
 
-await AlarmKit.cancel('my-timer')
-await AlarmKit.pause('my-timer')
-await AlarmKit.resume('my-timer')
+// Control alarms
+await AlarmKit.cancel(timerId)
+await AlarmKit.pause(timerId)
+await AlarmKit.resume(timerId)
 ```
 
 ### React Hooks
-
-Use hooks for automatic state updates:
 
 ```typescript
 import { useAlarms, useAuthorizationState } from 'react-native-ios-alarmkit'
@@ -113,8 +113,6 @@ function MyComponent() {
 
 ### Event Listeners
 
-Subscribe to alarm and authorization changes:
-
 ```typescript
 const alarmsSub = AlarmKit.addAlarmsListener((alarms) => {
   console.log('Alarms updated:', alarms)
@@ -124,13 +122,14 @@ const authSub = AlarmKit.addAuthorizationListener((state) => {
   console.log('Authorization changed:', state)
 })
 
+// Cleanup
 alarmsSub.remove()
 authSub.remove()
 ```
 
-### Advanced API (Full Native Mapping)
+### Advanced API
 
-For power users who need full control, use the advanced API that mirrors native AlarmKit exactly:
+Full control with 1:1 native AlarmKit mapping:
 
 ```typescript
 import {
@@ -181,11 +180,13 @@ const config = AlarmConfigurationFactory.timer({
   sound: 'custom-sound',
 })
 
-await AlarmKitManager.shared.schedule('my-alarm', config)
-await AlarmKitManager.shared.countdown('my-alarm')
+const id = uuid()
+await AlarmKitManager.shared.schedule(id, config)
+await AlarmKitManager.shared.countdown(id)
 
 const alarms = await AlarmKitManager.shared.getAlarms()
 
+// Listeners (note: method names differ from Simple API)
 const sub = AlarmKitManager.shared.addAlarmUpdatesListener((alarms) => {
   console.log('Alarms updated:', alarms)
 })
@@ -198,116 +199,124 @@ sub.remove()
 
 #### `AlarmKit.isSupported: boolean`
 
-Returns `true` if AlarmKit is supported on the current device (iOS 26+).
+`true` if AlarmKit is available (iOS 26+).
 
 #### `AlarmKit.getAuthorizationState(): Promise<AuthorizationState>`
 
-Returns the current authorization state: `'notDetermined'`, `'authorized'`, or `'denied'`.
+Returns `'notDetermined'`, `'authorized'`, or `'denied'`.
 
 #### `AlarmKit.requestAuthorization(): Promise<boolean>`
 
-Requests user authorization to schedule alarms. Returns `true` if granted.
+Request permission. Returns `true` if granted.
 
 #### `AlarmKit.scheduleTimer(id: string, config: SimpleTimerConfig): Promise<void>`
 
-Schedules a countdown timer.
-
-**SimpleTimerConfig:**
-
-- `duration: number` - Duration in seconds
-- `title: string` - Title shown when timer fires
-- `snoozeEnabled?: boolean` - Enable snooze button
-- `snoozeDuration?: number` - Snooze duration in seconds (default: 300)
-- `tintColor?: string` - Hex color for UI
-- `sound?: string` - Custom sound filename
+Schedule a countdown timer. `id` must be a valid UUID.
 
 #### `AlarmKit.scheduleAlarm(id: string, config: SimpleAlarmConfig): Promise<void>`
 
-Schedules a recurring alarm.
-
-**SimpleAlarmConfig:**
-
-- `hour: number` - Hour (0-23)
-- `minute: number` - Minute (0-59)
-- `weekdays?: Weekday[]` - Days to repeat (omit for daily)
-- `title: string` - Title shown when alarm fires
-- `snoozeEnabled?: boolean` - Enable snooze button
-- `snoozeDuration?: number` - Snooze duration in seconds (default: 540)
-- `tintColor?: string` - Hex color for UI
-- `sound?: string` - Custom sound filename
+Schedule a recurring alarm. `id` must be a valid UUID.
 
 #### `AlarmKit.cancel(id: string): Promise<void>`
 
-Cancels a scheduled alarm.
+Cancel a scheduled alarm.
 
 #### `AlarmKit.stop(id: string): Promise<void>`
 
-Stops an alerting alarm.
+Stop an alerting alarm.
 
 #### `AlarmKit.pause(id: string): Promise<void>`
 
-Pauses an alarm countdown.
+Pause a countdown.
 
 #### `AlarmKit.resume(id: string): Promise<void>`
 
-Resumes a paused alarm countdown.
+Resume a paused countdown.
 
 #### `AlarmKit.countdown(id: string): Promise<void>`
 
-Starts countdown for a scheduled alarm.
+Start countdown for a scheduled alarm.
 
 #### `AlarmKit.getAlarms(): Promise<Alarm[]>`
 
-Returns all active alarms with their current state.
+Get all active alarms.
 
-#### `AlarmKit.addAlarmsListener(callback: (alarms: Alarm[]) => void): Subscription`
+#### `AlarmKit.addAlarmsListener(callback): Subscription`
 
-Subscribes to alarm changes. Returns subscription with `remove()` method.
+Subscribe to alarm changes.
 
-#### `AlarmKit.addAuthorizationListener(callback: (state: AuthorizationState) => void): Subscription`
+#### `AlarmKit.addAuthorizationListener(callback): Subscription`
 
-Subscribes to authorization state changes.
+Subscribe to authorization changes.
 
 ### Advanced API
 
 #### `AlarmKitManager.shared`
 
-Singleton instance mirroring native `AlarmManager.shared`.
+Singleton mirroring native `AlarmManager.shared`.
 
-All methods from Simple API are available, plus:
+Methods: `schedule`, `cancel`, `stop`, `pause`, `resume`, `countdown`, `getAlarms`, `getAuthorizationState`, `requestAuthorization`.
 
-#### `AlarmKitManager.shared.addAlarmUpdatesListener(callback: (alarms: Alarm[]) => void): Subscription`
+Listeners:
 
-Stream of alarm updates (mirrors native `alarmUpdates` AsyncSequence).
-
-#### `AlarmKitManager.shared.addAuthorizationUpdatesListener(callback: (state: AuthorizationState) => void): Subscription`
-
-Stream of authorization updates (mirrors native `authorizationUpdates` AsyncSequence).
+- `addAlarmUpdatesListener(callback)` - alarm changes
+- `addAuthorizationUpdatesListener(callback)` - auth changes
 
 ### Factory Methods
 
-#### `AlarmConfigurationFactory.timer(options: TimerOptions): AlarmConfiguration`
+#### `AlarmConfigurationFactory.timer(options): AlarmConfiguration`
 
-Creates a timer-only configuration.
+Timer-only configuration.
 
-#### `AlarmConfigurationFactory.alarm(options: AlarmOptions): AlarmConfiguration`
+#### `AlarmConfigurationFactory.alarm(options): AlarmConfiguration`
 
-Creates an alarm-only configuration.
+Alarm-only configuration.
 
-#### `AlarmConfigurationFactory.create(options: FullOptions): AlarmConfiguration`
+#### `AlarmConfigurationFactory.create(options): AlarmConfiguration`
 
-Creates a full configuration with both countdown and schedule.
+Full configuration with both countdown and schedule.
 
 ### Types
 
 ```typescript
+type AuthorizationState = 'notDetermined' | 'authorized' | 'denied'
+
 type AlarmState = 'scheduled' | 'countdown' | 'paused' | 'alerting'
 
+type Weekday =
+  | 'sunday'
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+
 interface Alarm {
-  id: string
+  id: string // UUID
   state: AlarmState
   countdownDuration: CountdownDuration | null
   schedule: AlarmSchedule | null
+}
+
+interface SimpleTimerConfig {
+  duration: number // seconds
+  title: string
+  snoozeEnabled?: boolean
+  snoozeDuration?: number // seconds, default 300
+  tintColor?: string // hex color
+  sound?: string // custom sound filename
+}
+
+interface SimpleAlarmConfig {
+  hour: number // 0-23
+  minute: number // 0-59
+  weekdays?: Weekday[] // omit for daily
+  title: string
+  snoozeEnabled?: boolean
+  snoozeDuration?: number // seconds, default 540
+  tintColor?: string
+  sound?: string
 }
 
 interface AlarmButton {
@@ -322,55 +331,29 @@ interface AlarmPresentation {
   paused?: PausedPresentation
 }
 
-type Weekday =
-  | 'sunday'
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday'
+interface Subscription {
+  remove: () => void
+}
 ```
 
 ## Live Activities
 
-To display custom countdown UI with Live Activities, you need to implement a Widget Extension in Xcode. See the [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md) for detailed instructions.
-
-## Error Handling
-
-All methods may throw `AlarmKitError`:
-
-```typescript
-import { AlarmKitError } from 'react-native-ios-alarmkit'
-
-try {
-  await AlarmKit.scheduleTimer('id', config)
-} catch (error) {
-  if (error instanceof AlarmKitError) {
-    console.error('AlarmKit error:', error.message)
-  }
-}
-```
+Custom countdown UI requires a Widget Extension. See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md).
 
 ## Platform Support
 
-| Platform    | Support                      | Notes                                       |
-| ----------- | ---------------------------- | ------------------------------------------- |
-| iOS 26+     | Full support                 | All AlarmKit features available             |
-| iOS 15.1-25 | Compiles successfully        | Returns `isSupported: false`, methods no-op |
-| iOS < 15.1  | Not supported                | Library requires iOS 15.1+                  |
-| Android     | Returns `isSupported: false` | Methods no-op, no crashes                   |
+| Platform    | Support              | Notes                       |
+| ----------- | -------------------- | --------------------------- |
+| iOS 26+     | Full                 | All features available      |
+| iOS 15.1-25 | Compiles             | `isSupported: false`, no-op |
+| iOS < 15.1  | Not supported        | Library requires iOS 15.1+  |
+| Android     | `isSupported: false` | No-op, no crashes           |
 
-**Your app does not need iOS 26 as minimum deployment target.** The library uses runtime checks (`@available(iOS 26.0, *)`) to gracefully handle older iOS versions.
+Your app does not need iOS 26 as minimum target. Runtime checks handle older versions.
 
 ## Example
 
-See the [example](./example) directory for a complete demo app showcasing:
-
-- Simple and advanced APIs
-- React hooks
-- Event listeners
-- Live alarm management
+See [example](./example) for a complete demo.
 
 ## License
 
