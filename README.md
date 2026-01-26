@@ -78,7 +78,7 @@ await AlarmKit.scheduleAlarm(alarmId, {
   minute: 0,
   weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
   title: 'Wake Up!',
-  snoozeEnabled: true,
+  snoozeEnabled: false,
   tintColor: '#4A90D9',
 })
 
