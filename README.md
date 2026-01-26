@@ -459,4 +459,4 @@ See [example](./example) for a complete demo.
 
 ## License
 
-Apache 2.0
+MIT

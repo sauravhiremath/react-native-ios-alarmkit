@@ -49,7 +49,7 @@
     "url": "git+https://github.com/sauravhiremath/react-native-ios-alarmkit.git"
   },
   "author": "Saurav M. Hiremath",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/sauravhiremath/react-native-ios-alarmkit/issues"
   },
