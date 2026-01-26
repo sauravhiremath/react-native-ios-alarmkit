@@ -60,9 +60,6 @@ yarn-error.log
 .cache
 *.tsbuildinfo
 
-# Source files (ship lib/ only)
-src/
-
 # Git
 .git/
 .github/

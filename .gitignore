@@ -82,5 +82,7 @@ lib/
 .cache
 *.tsbuildinfo
 
+AGENTS.md
+
 # Nitrogen
 nitrogen/
