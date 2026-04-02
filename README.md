@@ -15,7 +15,7 @@ React Native wrapper for iOS AlarmKit framework. Schedule alarms, timers, and co
 ## Installation
 
 ```bash
-yarn add react-native-ios-alarmkit react-native-nitro-modules
+bun add react-native-ios-alarmkit react-native-nitro-modules
 ```
 
 ### iOS Setup

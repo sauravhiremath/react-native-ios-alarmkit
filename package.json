@@ -34,7 +34,7 @@
     "lint-ci": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/eslint-formatter-github-actions",
     "typescript": "tsc",
     "specs": "tsc --noEmit false && nitrogen --logLevel=\"debug\"",
-    "prepublishOnly": "yarn typescript && yarn specs"
+    "prepublishOnly": "bun run typescript && bun run specs"
   },
   "keywords": [
     "react-native",

@@ -8,16 +8,16 @@ We welcome contributions! Here's how to get started.
 git clone https://github.com/sauravhiremath/react-native-ios-alarmkit.git
 cd react-native-ios-alarmkit
 nvm use
-yarn install
-yarn specs
+bun install
+bun run specs
 ```
 
 ## Development
 
 ```bash
-yarn typecheck  # Type checking
-yarn lint       # ESLint
-yarn specs      # Regenerate native specs after *.nitro.ts changes
+bun run typecheck  # Type checking
+bun run lint       # ESLint
+bun run specs      # Regenerate native specs after *.nitro.ts
 ```
 
 ## Making Changes
@@ -25,7 +25,7 @@ yarn specs      # Regenerate native specs after *.nitro.ts changes
 1. **Fork** the repo
 2. **Create** a feature branch (`git checkout -b feature/awesome-feature`)
 3. **Make** your changes
-4. **Run** checks: `yarn typecheck && yarn lint`
+4. **Run** checks: `bun run typecheck && bun run lint`
 5. **Commit** with clear messages
 6. **Push** and open a PR
 
@@ -34,7 +34,7 @@ yarn specs      # Regenerate native specs after *.nitro.ts changes
 - Use TypeScript strict mode
 - Follow existing patterns (Simple + Advanced API)
 - No emojis in code
-- Run `yarn lint --fix` before committing
+- Run `bun run lint --fix` before committing
 
 ## Testing
 
@@ -42,9 +42,9 @@ Test on iOS 26+ device/simulator:
 
 ```bash
 cd example
-yarn install
+bun install
 cd ios && pod install && cd ..
-yarn ios
+bun run ios
 ```
 
 Test on earlier versions of iOS (< 26):
