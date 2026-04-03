@@ -4,7 +4,7 @@ import {
   Alert,
   Dimensions,
   Linking,
-  SafeAreaView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AlarmKit, {
   useAlarms,
   useAuthorizationState,
@@ -27,18 +28,18 @@ const COLORS = {
   cardAlarm: '#D4E8D0',
   cardDaily: '#E8D8A0',
   cardPerm: '#1A1A1A',
-  cardAlarms: '#FFFFFF',
+  cardAlarms: '#F7F5F1',
   cardTips: '#F0EBE0',
   badgeAuth: '#2D6A4F',
   badgeNotDet: '#8B6914',
   badgeDenied: '#8B2020',
-  stateScheduled: '#5B7FA6',
+  stateScheduled: '#6594B1',
   stateCountdown: '#2D6A4F',
   statePaused: '#8B6914',
   stateAlerting: '#C0392B',
-  cancelBtn: '#C0392B',
-  pauseBtn: '#5B7FA6',
-  resumeBtn: '#2D6A4F',
+  cancelBtn: '#C44A3A',
+  pauseBtn: '#8A7650',
+  resumeBtn: '#5FA777',
   divider: '#E0D8CC',
 };
 
@@ -52,12 +53,8 @@ const stateColor = (s: AlarmState): string => {
   return COLORS.stateAlerting;
 };
 
-const formattedDate = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-});
+const platformLabel =
+  Platform.OS === 'ios' ? `iOS ${Platform.Version}` : 'Android';
 
 export default function App(): React.JSX.Element {
   const {
@@ -93,8 +90,7 @@ export default function App(): React.JSX.Element {
     }
     setSchedulingId('auth');
     try {
-      const granted = await AlarmKit.requestAuthorization();
-      if (!granted) Alert.alert('Denied', 'Authorization was not granted.');
+      await AlarmKit.requestAuthorization();
     } catch (e) {
       Alert.alert('Error', String(e));
     } finally {
@@ -106,7 +102,7 @@ export default function App(): React.JSX.Element {
     if (!checkSupport()) return;
     setSchedulingId('timer');
     try {
-      await AlarmKit.scheduleTimer('demo-timer-5s', {
+      await AlarmKit.scheduleTimer('00000000-0000-0000-0000-000000000001', {
         duration: 5,
         title: 'Timer Done!',
         snoozeEnabled: false,
@@ -123,7 +119,7 @@ export default function App(): React.JSX.Element {
     if (!checkSupport()) return;
     setSchedulingId('alarm');
     try {
-      await AlarmKit.scheduleTimer('demo-alarm-10s', {
+      await AlarmKit.scheduleTimer('00000000-0000-0000-0000-000000000002', {
         duration: 10,
         title: 'Alarm!',
         snoozeEnabled: false,
@@ -140,7 +136,7 @@ export default function App(): React.JSX.Element {
     if (!checkSupport()) return;
     setSchedulingId('daily');
     try {
-      await AlarmKit.scheduleAlarm('demo-daily-7am', {
+      await AlarmKit.scheduleAlarm('00000000-0000-0000-0000-000000000003', {
         hour: 7,
         minute: 0,
         weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
@@ -198,11 +194,15 @@ export default function App(): React.JSX.Element {
           ? COLORS.badgeDenied
           : COLORS.badgeNotDet;
 
-  const authBadgeLabel = !AlarmKit.isSupported
-    ? 'unsupported'
+  const authStateLabel = !AlarmKit.isSupported
+    ? 'Unsupported'
     : authIsLoading
       ? '...'
-      : authState;
+      : authState === 'authorized'
+        ? 'Granted'
+        : authState === 'denied'
+          ? 'Declined'
+          : 'Unknown';
 
   const isSchedulingDisabled =
     schedulingId !== null || authState !== 'authorized' || !AlarmKit.isSupported;
@@ -216,14 +216,19 @@ export default function App(): React.JSX.Element {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>AlarmKit</Text>
-          <Text style={styles.dateText}>{formattedDate}</Text>
         </View>
 
-        {/* Authorization badge row */}
-        <View style={styles.authRow}>
-          <Text style={styles.authLabel}>Authorization</Text>
-          <View style={[styles.authBadge, { backgroundColor: authBadgeColor }]}>
-            <Text style={styles.authBadgeText}>{authBadgeLabel}</Text>
+        {/* Info rows */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Platform</Text>
+            <Text style={styles.infoValue}>{platformLabel}</Text>
+          </View>
+          <View style={[styles.infoRow, styles.infoRowLast]}>
+            <Text style={styles.infoLabel}>Authorization</Text>
+            <View style={[styles.authBadge, { backgroundColor: authBadgeColor }]}>
+              <Text style={styles.authBadgeText}>{authStateLabel}</Text>
+            </View>
           </View>
         </View>
 
@@ -335,11 +340,6 @@ export default function App(): React.JSX.Element {
                 key={alarm.id}
                 style={[styles.alarmRow, index === 0 && styles.alarmRowFirst]}>
                 <View style={styles.alarmInfo}>
-                  <Text style={styles.alarmIdText}>
-                    {alarm.id.length > 10
-                      ? alarm.id.slice(0, 8) + '…'
-                      : alarm.id}
-                  </Text>
                   <View
                     style={[
                       styles.alarmStateBadge,
@@ -349,6 +349,11 @@ export default function App(): React.JSX.Element {
                       {alarm.state}
                     </Text>
                   </View>
+                  <Text style={styles.alarmIdText}>
+                    {alarm.id.length > 10
+                      ? alarm.id.slice(0, 8) + '…'
+                      : alarm.id}
+                  </Text>
                 </View>
                 <View style={styles.alarmActions}>
                   {alarm.state === 'countdown' && (
@@ -395,15 +400,17 @@ export default function App(): React.JSX.Element {
           </View>
         )}
 
-        {/* Tips */}
-        <View style={styles.tipsCard}>
-          <Text style={styles.tipsLabel}>TIPS</Text>
-          <Text style={styles.tipText}>AlarmKit requires iOS 26 or later</Text>
-          <Text style={styles.tipText}>
-            Alarms persist across app restarts via the OS
+        {/* Features */}
+        <View style={styles.featuresCard}>
+          <Text style={styles.featuresLabel}>Features</Text>
+          <Text style={styles.featureText}>
+            - AlarmKit requires iOS 26 or later
           </Text>
-          <Text style={styles.tipText}>
-            State updates are delivered via hooks in real time
+          <Text style={styles.featureText}>
+            - Alarms persist across app restarts via the OS
+          </Text>
+          <Text style={styles.featureText}>
+            - State updates are delivered via hooks in real time
           </Text>
         </View>
       </ScrollView>
@@ -425,27 +432,36 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontFamily: 'Georgia',
+    fontFamily: 'OggTRIAL-Bold',
     fontSize: 42,
-    fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -1,
   },
-  dateText: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginTop: 4,
+  infoCard: {
+    backgroundColor: COLORS.cardAlarms,
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
-  authRow: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
   },
-  authLabel: {
+  infoRowLast: {
+    borderBottomWidth: 0,
+  },
+  infoLabel: {
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: COLORS.textMuted,
   },
   authBadge: {
     paddingHorizontal: 12,
@@ -508,8 +524,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   alarmsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'OggTRIAL-Bold',
+    fontSize: 22,
     color: COLORS.text,
     flex: 1,
   },
@@ -549,8 +565,8 @@ const styles = StyleSheet.create({
   },
   alarmStateBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   alarmStateBadgeText: {
     fontSize: 11,
@@ -573,20 +589,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textOnDark,
   },
-  tipsCard: {
+  featuresCard: {
     backgroundColor: COLORS.cardTips,
     borderRadius: 20,
     padding: 20,
     gap: 6,
   },
-  tipsLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: COLORS.textMuted,
+  featuresLabel: {
+    fontFamily: 'OggTRIAL-Bold',
+    fontSize: 22,
+    color: COLORS.text,
     marginBottom: 2,
   },
-  tipText: {
+  featureText: {
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 20,

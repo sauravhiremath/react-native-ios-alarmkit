@@ -2,6 +2,7 @@ const path = require('path');
 const pkg = require('../package.json');
 
 module.exports = {
+  assets: ['./assets/fonts'],
   project: {
     ios: {
       automaticPodsInstallation: true,

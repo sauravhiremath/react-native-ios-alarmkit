@@ -72,7 +72,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
           let _ = try await AlarmManager.shared.requestAuthorization()
           return AlarmManager.shared.authorizationState == .authorized
         } catch {
-          return false
+          throw self.wrapError(error)
         }
       }
     }
