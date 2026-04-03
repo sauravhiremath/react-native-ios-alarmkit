@@ -55,11 +55,16 @@
     "url": "https://github.com/sauravhiremath/react-native-ios-alarmkit/issues"
   },
   "homepage": "https://github.com/sauravhiremath/react-native-ios-alarmkit#readme",
+  "workspaces": [
+    "example"
+  ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@babel/runtime": "^7.25.0",
+    "react-native-builder-bob": "^0.40.13",
     "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
     "@react-native/babel-preset": "0.83.0",
     "@react-native/eslint-config": "0.83.0",
