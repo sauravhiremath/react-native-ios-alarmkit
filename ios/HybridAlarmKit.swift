@@ -62,15 +62,16 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     return Promise.resolved(withResult: "denied")
   }
   
-  // NOTE: requestAuthorization() is an async throwing method.
-  // We use Promise.async to properly await the async operation.
+  // NOTE: requestAuthorization() is a @MainActor async throwing method.
+  // We run the closure on @MainActor to avoid a deadlock where a background Task
+  // waits for the main actor while the main actor is blocked waiting for the promise.
   func requestAuthorization() throws -> Promise<Bool> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
-      return Promise.async {
+      return Promise.async { @MainActor in
         do {
-          let _ = try await AlarmManager.shared.requestAuthorization()
-          return AlarmManager.shared.authorizationState == .authorized
+          let status = try await AlarmManager.shared.requestAuthorization()
+          return status == .authorized
         } catch {
           throw self.wrapError(error)
         }
