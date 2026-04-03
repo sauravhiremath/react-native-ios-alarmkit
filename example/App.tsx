@@ -1,255 +1,398 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
-  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Linking,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  View,
-  Button,
-  Alert,
-  TextInput,
   TouchableOpacity,
-} from 'react-native'
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AlarmKit, {
   useAlarms,
   useAuthorizationState,
-  AlarmKitManager,
-  AlarmConfigurationFactory,
-} from 'react-native-ios-alarmkit'
+} from 'react-native-ios-alarmkit';
+import type { AlarmState } from 'react-native-ios-alarmkit';
 
-function App(): React.JSX.Element {
-  const { state: authState, error: authError } = useAuthorizationState()
-  const { alarms, error: alarmsError } = useAlarms()
-  const [minutes, setMinutes] = useState('5')
-  const [useAdvancedAPI, setUseAdvancedAPI] = useState(false)
+const COLORS = {
+  bg: '#F5F0E8',
+  text: '#1A1A1A',
+  textMuted: '#666666',
+  textOnDark: '#FFFFFF',
+  cardTimer: '#C8D8E8',
+  cardAlarm: '#D4E8D0',
+  cardDaily: '#E8D8A0',
+  cardPerm: '#1A1A1A',
+  cardAlarms: '#F7F5F1',
+  cardTips: '#F0EBE0',
+  badgeAuth: '#2D6A4F',
+  badgeNotDet: '#8B6914',
+  badgeDenied: '#8B2020',
+  stateScheduled: '#6594B1',
+  stateCountdown: '#2D6A4F',
+  statePaused: '#8B6914',
+  stateAlerting: '#C0392B',
+  cancelBtn: '#C44A3A',
+  pauseBtn: '#8A7650',
+  resumeBtn: '#5FA777',
+  divider: '#E0D8CC',
+};
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 48 - 12) / 2;
+
+const stateColor = (s: AlarmState): string => {
+  if (s === 'scheduled') return COLORS.stateScheduled;
+  if (s === 'countdown') return COLORS.stateCountdown;
+  if (s === 'paused') return COLORS.statePaused;
+  return COLORS.stateAlerting;
+};
+
+const platformLabel =
+  Platform.OS === 'ios' ? `iOS ${Platform.Version}` : 'Android';
+
+export default function App(): React.JSX.Element {
+  const {
+    state: authState,
+    isLoading: authIsLoading,
+    error: authError,
+  } = useAuthorizationState();
+  const { alarms, error: alarmsError } = useAlarms();
+  const [schedulingId, setSchedulingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   React.useEffect(() => {
-    if (authError) {
-      Alert.alert('Auth Error', authError.message)
-    }
-  }, [authError])
+    if (authError) Alert.alert('Authorization Error', authError.message);
+  }, [authError]);
 
   React.useEffect(() => {
-    if (alarmsError) {
-      Alert.alert('Alarms Error', alarmsError.message)
-    }
-  }, [alarmsError])
+    if (alarmsError) Alert.alert('Alarms Error', alarmsError.message);
+  }, [alarmsError]);
 
-  const requestAuth = async () => {
-    const granted = await AlarmKit.requestAuthorization()
-    if (granted) {
-      Alert.alert('Success', 'Authorization granted!')
-    } else {
-      Alert.alert('Denied', 'Authorization was denied')
-    }
-  }
-
-  const scheduleSimpleTimer = async () => {
+  const checkSupport = (): boolean => {
     if (!AlarmKit.isSupported) {
-      Alert.alert('Not Supported', 'AlarmKit is only available on iOS 26+')
-      return
+      Alert.alert('Not Supported', 'AlarmKit requires iOS 26 or later.');
+      return false;
     }
+    return true;
+  };
 
-    if (authState !== 'authorized') {
-      Alert.alert('Not Authorized', 'Please authorize the app first')
-      return
+  const handleRequestAuth = async (): Promise<void> => {
+    if (!checkSupport()) return;
+    if (authState === 'denied') {
+      await Linking.openSettings();
+      return;
     }
-
+    setSchedulingId('auth');
     try {
-      const minutesNum = parseInt(minutes, 10)
-      const id = crypto.randomUUID()
+      await AlarmKit.requestAuthorization();
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setSchedulingId(null);
+    }
+  };
 
-      await AlarmKit.scheduleTimer(id, {
-        duration: minutesNum * 60,
+  const handleScheduleTimer = async (): Promise<void> => {
+    if (!checkSupport()) return;
+    setSchedulingId('timer');
+    try {
+      await AlarmKit.scheduleTimer('00000000-0000-0000-0000-000000000001', {
+        duration: 5,
         title: 'Timer Done!',
+        snoozeEnabled: false,
+        tintColor: '#5B7FA6',
+      });
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setSchedulingId(null);
+    }
+  };
+
+  const handleScheduleAlarm = async (): Promise<void> => {
+    if (!checkSupport()) return;
+    setSchedulingId('alarm');
+    try {
+      await AlarmKit.scheduleTimer('00000000-0000-0000-0000-000000000002', {
+        duration: 10,
+        title: 'Alarm!',
+        snoozeEnabled: false,
+        tintColor: '#2D6A4F',
+      });
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setSchedulingId(null);
+    }
+  };
+
+  const handleScheduleDaily = async (): Promise<void> => {
+    if (!checkSupport()) return;
+    setSchedulingId('daily');
+    try {
+      await AlarmKit.scheduleAlarm('00000000-0000-0000-0000-000000000003', {
+        hour: 7,
+        minute: 0,
+        weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        title: 'Good Morning',
         snoozeEnabled: true,
-        snoozeDuration: 60,
-        tintColor: '#FF6B6B',
-      })
-
-      Alert.alert('Success', `Timer scheduled for ${minutesNum} minutes`)
-    } catch (error) {
-      Alert.alert('Error', String(error))
+        snoozeDuration: 540,
+        tintColor: '#8B6914',
+      });
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setSchedulingId(null);
     }
-  }
+  };
 
-  const scheduleAdvancedAlarm = async () => {
-    if (!AlarmKitManager.shared.isSupported) {
-      Alert.alert('Not Supported', 'AlarmKit is only available on iOS 26+')
-      return
-    }
-
-    if (authState !== 'authorized') {
-      Alert.alert('Not Authorized', 'Please authorize the app first')
-      return
-    }
-
+  const handleCancel = async (id: string): Promise<void> => {
+    setLoadingId(id);
     try {
-      const id = crypto.randomUUID()
-
-      const config = AlarmConfigurationFactory.timer({
-        duration: 300,
-        attributes: {
-          presentation: {
-            alert: {
-              title: 'Advanced Timer!',
-              stopButton: {
-                text: 'Stop',
-                textColor: '#FFFFFF',
-                systemImageName: 'stop.circle',
-              },
-            },
-            countdown: {
-              title: 'Countdown...',
-            },
-          },
-          tintColor: '#4A90D9',
-        },
-      })
-
-      await AlarmKitManager.shared.schedule(id, config)
-      Alert.alert('Success', 'Advanced alarm scheduled!')
-    } catch (error) {
-      Alert.alert('Error', String(error))
+      await AlarmKit.cancel(id);
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setLoadingId(null);
     }
-  }
+  };
 
-  const cancelAlarm = async (id: string) => {
+  const handlePause = async (id: string): Promise<void> => {
+    setLoadingId(id);
     try {
-      await AlarmKit.cancel(id)
-      Alert.alert('Cancelled', 'Alarm cancelled successfully')
-    } catch (error) {
-      Alert.alert('Error', String(error))
+      await AlarmKit.pause(id);
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setLoadingId(null);
     }
-  }
+  };
 
-  const pauseAlarm = async (id: string) => {
+  const handleResume = async (id: string): Promise<void> => {
+    setLoadingId(id);
     try {
-      await AlarmKit.pause(id)
-      Alert.alert('Paused', 'Alarm paused')
-    } catch (error) {
-      Alert.alert('Error', String(error))
+      await AlarmKit.resume(id);
+    } catch (e) {
+      Alert.alert('Error', String(e));
+    } finally {
+      setLoadingId(null);
     }
-  }
+  };
+
+  const authBadgeColor =
+    !AlarmKit.isSupported
+      ? COLORS.textMuted
+      : authState === 'authorized'
+        ? COLORS.badgeAuth
+        : authState === 'denied'
+          ? COLORS.badgeDenied
+          : COLORS.badgeNotDet;
+
+  const authStateLabel = !AlarmKit.isSupported
+    ? 'Unsupported'
+    : authIsLoading
+      ? '...'
+      : authState === 'authorized'
+        ? 'Granted'
+        : authState === 'denied'
+          ? 'Declined'
+          : 'Unknown';
+
+  const isSchedulingDisabled =
+    schedulingId !== null || authState !== 'authorized' || !AlarmKit.isSupported;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.section}>
-          <Text style={styles.title}>AlarmKit Example</Text>
-
-          <View style={styles.statusCard}>
-            <Text style={styles.label}>Platform Support:</Text>
-            <Text style={styles.value}>
-              {AlarmKit.isSupported ? 'Supported' : 'Not Supported'}
-            </Text>
-          </View>
-
-          <View style={styles.statusCard}>
-            <Text style={styles.label}>Authorization:</Text>
-            <Text style={styles.value}>{authState}</Text>
-          </View>
-
-          {AlarmKit.isSupported && authState !== 'authorized' && (
-            <Button title="Request Authorization" onPress={requestAuth} />
-          )}
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>AlarmKit</Text>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.toggleContainer}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                !useAdvancedAPI && styles.toggleButtonActive,
-              ]}
-              onPress={() => setUseAdvancedAPI(false)}
-            >
-              <Text
-                style={[
-                  styles.toggleText,
-                  !useAdvancedAPI && styles.toggleTextActive,
-                ]}
-              >
-                Simple API
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                useAdvancedAPI && styles.toggleButtonActive,
-              ]}
-              onPress={() => setUseAdvancedAPI(true)}
-            >
-              <Text
-                style={[
-                  styles.toggleText,
-                  useAdvancedAPI && styles.toggleTextActive,
-                ]}
-              >
-                Advanced API
-              </Text>
-            </TouchableOpacity>
+        {/* Info rows */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Platform</Text>
+            <Text style={styles.infoValue}>{platformLabel}</Text>
+          </View>
+          <View style={[styles.infoRow, styles.infoRowLast]}>
+            <Text style={styles.infoLabel}>Authorization</Text>
+            <View style={[styles.authBadge, { backgroundColor: authBadgeColor }]}>
+              <Text style={styles.authBadgeText}>{authStateLabel}</Text>
+            </View>
           </View>
         </View>
 
-        {AlarmKit.isSupported && authState === 'authorized' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {useAdvancedAPI ? 'Advanced API Demo' : 'Simple API Demo'}
-            </Text>
-
-            {!useAdvancedAPI ? (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Minutes"
-                  value={minutes}
-                  onChangeText={setMinutes}
-                  keyboardType="number-pad"
-                />
-                <Button
-                  title="Schedule Simple Timer"
-                  onPress={scheduleSimpleTimer}
-                />
-              </>
+        {/* Action cards grid */}
+        <View style={styles.actionGrid}>
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              styles.actionCardDark,
+              { width: CARD_WIDTH },
+              (authIsLoading || schedulingId === 'auth') && styles.cardDisabled,
+            ]}
+            onPress={handleRequestAuth}
+            disabled={
+              authIsLoading ||
+              schedulingId === 'auth' ||
+              (authState === 'authorized' && !AlarmKit.isSupported)
+            }
+            activeOpacity={0.8}>
+            {schedulingId === 'auth' ? (
+              <ActivityIndicator color={COLORS.textOnDark} />
             ) : (
-              <Button
-                title="Schedule Advanced Timer"
-                onPress={scheduleAdvancedAlarm}
-              />
+              <>
+                <Text style={styles.actionCardDarkLabel}>
+                  {authState === 'denied'
+                    ? 'Open\nSettings'
+                    : 'Request\nPermission'}
+                </Text>
+                <Text style={styles.actionCardDarkSub}>
+                  {authState === 'authorized'
+                    ? 'Already granted'
+                    : authState === 'denied'
+                      ? 'Tap to open settings'
+                      : 'Tap to authorize'}
+                </Text>
+              </>
             )}
-          </View>
-        )}
+          </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              { backgroundColor: COLORS.cardTimer, width: CARD_WIDTH },
+              isSchedulingDisabled && styles.cardDisabled,
+            ]}
+            onPress={handleScheduleTimer}
+            disabled={isSchedulingDisabled}
+            activeOpacity={0.8}>
+            {schedulingId === 'timer' ? (
+              <ActivityIndicator color={COLORS.text} />
+            ) : (
+              <>
+                <Text style={styles.actionCardLabel}>5s Timer</Text>
+                <Text style={styles.actionCardSub}>Countdown · no snooze</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              { backgroundColor: COLORS.cardAlarm, width: CARD_WIDTH },
+              isSchedulingDisabled && styles.cardDisabled,
+            ]}
+            onPress={handleScheduleAlarm}
+            disabled={isSchedulingDisabled}
+            activeOpacity={0.8}>
+            {schedulingId === 'alarm' ? (
+              <ActivityIndicator color={COLORS.text} />
+            ) : (
+              <>
+                <Text style={styles.actionCardLabel}>10s Alarm</Text>
+                <Text style={styles.actionCardSub}>Fixed date · no snooze</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              { backgroundColor: COLORS.cardDaily, width: CARD_WIDTH },
+              isSchedulingDisabled && styles.cardDisabled,
+            ]}
+            onPress={handleScheduleDaily}
+            disabled={isSchedulingDisabled}
+            activeOpacity={0.8}>
+            {schedulingId === 'daily' ? (
+              <ActivityIndicator color={COLORS.text} />
+            ) : (
+              <>
+                <Text style={styles.actionCardLabel}>Daily 7:00 AM</Text>
+                <Text style={styles.actionCardSub}>Mon–Fri · recurring</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Active alarms */}
         {alarms.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Active Alarms ({alarms.length})
-            </Text>
-            {alarms.map((alarm) => (
-              <View key={alarm.id} style={styles.alarmItem}>
+          <View style={styles.alarmsCard}>
+            <View style={styles.alarmsHeader}>
+              <Text style={styles.alarmsTitle}>Active Alarms</Text>
+              <View style={styles.alarmsCountBadge}>
+                <Text style={styles.alarmsCountText}>{alarms.length}</Text>
+              </View>
+            </View>
+            {alarms.map((alarm, index) => (
+              <View
+                key={alarm.id}
+                style={[styles.alarmRow, index === 0 && styles.alarmRowFirst]}>
                 <View style={styles.alarmInfo}>
-                  <Text style={styles.alarmId} numberOfLines={1}>
-                    {alarm.id}
+                  <View
+                    style={[
+                      styles.alarmStateBadge,
+                      { backgroundColor: stateColor(alarm.state) },
+                    ]}>
+                    <Text style={styles.alarmStateBadgeText}>
+                      {alarm.state}
+                    </Text>
+                  </View>
+                  <Text style={styles.alarmIdText}>
+                    {alarm.id.length > 10
+                      ? alarm.id.slice(0, 8) + '…'
+                      : alarm.id}
                   </Text>
-                  <Text style={styles.alarmState}>{alarm.state}</Text>
                 </View>
                 <View style={styles.alarmActions}>
                   {alarm.state === 'countdown' && (
                     <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => pauseAlarm(alarm.id)}
-                    >
-                      <Text style={styles.actionButtonText}>Pause</Text>
+                      style={[
+                        styles.alarmActionBtn,
+                        { backgroundColor: COLORS.pauseBtn },
+                      ]}
+                      onPress={() => handlePause(alarm.id)}
+                      disabled={loadingId === alarm.id}>
+                      <Text style={styles.alarmActionBtnText}>Pause</Text>
+                    </TouchableOpacity>
+                  )}
+                  {alarm.state === 'paused' && (
+                    <TouchableOpacity
+                      style={[
+                        styles.alarmActionBtn,
+                        { backgroundColor: COLORS.resumeBtn },
+                      ]}
+                      onPress={() => handleResume(alarm.id)}
+                      disabled={loadingId === alarm.id}>
+                      <Text style={styles.alarmActionBtnText}>Resume</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
-                    style={[styles.actionButton, styles.actionButtonDanger]}
-                    onPress={() => cancelAlarm(alarm.id)}
-                  >
-                    <Text style={styles.actionButtonText}>Cancel</Text>
+                    style={[
+                      styles.alarmActionBtn,
+                      { backgroundColor: COLORS.cancelBtn },
+                    ]}
+                    onPress={() => handleCancel(alarm.id)}
+                    disabled={loadingId === alarm.id}>
+                    {loadingId === alarm.id ? (
+                      <ActivityIndicator
+                        color={COLORS.textOnDark}
+                        size="small"
+                      />
+                    ) : (
+                      <Text style={styles.alarmActionBtnText}>Cancel</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -257,139 +400,210 @@ function App(): React.JSX.Element {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>React Hooks Demo</Text>
-          <Text style={styles.infoText}>
-            This screen uses useAuthorizationState() and useAlarms() hooks to
-            automatically update when alarms change.
+        {/* Features */}
+        <View style={styles.featuresCard}>
+          <Text style={styles.featuresLabel}>Features</Text>
+          <Text style={styles.featureText}>
+            - AlarmKit requires iOS 26 or later
+          </Text>
+          <Text style={styles.featureText}>
+            - Alarms persist across app restarts via the OS
+          </Text>
+          <Text style={styles.featureText}>
+            - State updates are delivered via hooks in real time
           </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.bg,
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 48,
   },
-  section: {
+  header: {
     marginBottom: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontFamily: 'OggTRIAL-Bold',
+    fontSize: 42,
+    color: COLORS.text,
+    letterSpacing: -1,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 15,
-  },
-  statusCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    color: '#666',
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+  infoCard: {
+    backgroundColor: COLORS.cardAlarms,
+    borderRadius: 20,
+    paddingHorizontal: 20,
     marginBottom: 12,
-    fontSize: 16,
   },
-  toggleContainer: {
+  infoRow: {
     flexDirection: 'row',
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#4A90D9',
-  },
-  toggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  toggleTextActive: {
-    color: '#fff',
-  },
-  alarmItem: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  infoRowLast: {
+    borderBottomWidth: 0,
+  },
+  infoLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+  },
+  authBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  authBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textOnDark,
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  actionCard: {
+    borderRadius: 24,
+    padding: 20,
+    minHeight: 110,
+    justifyContent: 'flex-end',
+  },
+  actionCardDark: {
+    backgroundColor: COLORS.cardPerm,
+  },
+  actionCardLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  actionCardSub: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 5,
+  },
+  actionCardDarkLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textOnDark,
+  },
+  actionCardDarkSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.55)',
+    marginTop: 5,
+  },
+  cardDisabled: {
+    opacity: 0.45,
+  },
+  alarmsCard: {
+    backgroundColor: COLORS.cardAlarms,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 12,
+  },
+  alarmsHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  alarmsTitle: {
+    fontFamily: 'OggTRIAL-Bold',
+    fontSize: 22,
+    color: COLORS.text,
+    flex: 1,
+  },
+  alarmsCountBadge: {
+    backgroundColor: COLORS.text,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  alarmsCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textOnDark,
+  },
+  alarmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.divider,
+    marginTop: 4,
+  },
+  alarmRowFirst: {
+    borderTopWidth: 0,
+    marginTop: 0,
   },
   alarmInfo: {
     flex: 1,
-    marginRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  alarmId: {
+  alarmIdText: {
     fontSize: 12,
-    color: '#333',
-    marginBottom: 4,
+    color: COLORS.textMuted,
+    fontFamily: 'Menlo',
   },
-  alarmState: {
-    fontSize: 14,
+  alarmStateBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  alarmStateBadgeText: {
+    fontSize: 11,
     fontWeight: '600',
-    color: '#4A90D9',
+    color: COLORS.textOnDark,
   },
   alarmActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
-  actionButton: {
+  alarmActionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#4A90D9',
-    borderRadius: 6,
+    borderRadius: 8,
+    minWidth: 56,
+    alignItems: 'center',
   },
-  actionButtonDanger: {
-    backgroundColor: '#FF6B6B',
-  },
-  actionButtonText: {
-    color: '#fff',
+  alarmActionBtnText: {
     fontSize: 12,
     fontWeight: '600',
+    color: COLORS.textOnDark,
   },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
+  featuresCard: {
+    backgroundColor: COLORS.cardTips,
+    borderRadius: 20,
+    padding: 20,
+    gap: 6,
+  },
+  featuresLabel: {
+    fontFamily: 'OggTRIAL-Bold',
+    fontSize: 22,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  featureText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
     lineHeight: 20,
   },
-})
-
-export default App
+});

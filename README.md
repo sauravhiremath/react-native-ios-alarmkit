@@ -15,8 +15,23 @@ React Native wrapper for iOS AlarmKit framework. Schedule alarms, timers, and co
 ## Installation
 
 ```bash
+# Using bun
 bun add react-native-ios-alarmkit react-native-nitro-modules
+
+# Using npm
+npm add react-native-ios-alarmkit react-native-nitro-modules
+
+# Using yarn
+yarn add react-native-ios-alarmkit react-native-nitro-modules
 ```
+
+## ⚙️ Configuration
+
+> [!IMPORTANT]
+>
+> - Supported for both Expo & Bare (Non Expo) React Native projects.
+> - AlarmKit introduced in iOS 26. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+.
+> - **Requires physical device** — Simulator has limited support.
 
 ### iOS Setup
 
@@ -35,8 +50,6 @@ bun add react-native-ios-alarmkit react-native-nitro-modules
 cd ios && pod install
 ```
 
-AlarmKit only works on iOS 26+. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+.
-
 ### Android
 
 No setup required. Returns `isSupported: false`.
@@ -45,7 +58,7 @@ No setup required. Returns `isSupported: false`.
 
 Requires native code. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild`.
 
-## Usage
+## ⚙️ Usage
 
 ### Simple API
 
@@ -241,7 +254,7 @@ Returns `'notDetermined'`, `'authorized'`, or `'denied'`.
 
 #### `AlarmKit.requestAuthorization(): Promise<boolean>`
 
-Request permission. Returns `true` if granted. If not called, AlarmKit auto-requests on first `schedule()`.
+Request permission. Returns `true` if authorized, `false` if the user denied. Throws `AlarmKitError` if the OS rejects the request (e.g. missing `NSAlarmKitUsageDescription`). Use `useAuthorizationState` hook to reactively observe the result.
 
 #### `AlarmKit.scheduleTimer(id: string, config: SimpleTimerConfig): Promise<void>`
 
@@ -312,6 +325,11 @@ interface UseAuthorizationResult {
 Singleton mirroring native `AlarmManager.shared`.
 
 Methods: `schedule`, `cancel`, `stop`, `pause`, `resume`, `countdown`, `getAlarms`, `getAuthorizationState`, `requestAuthorization`.
+
+Convenience methods:
+
+- `scheduleOrReschedule(id, config)` — cancels an existing alarm with the same ID (if any) then schedules a new one. Safe to call even if the alarm doesn't exist yet.
+- `cancelIfExists(id)` — cancels an alarm, silently ignoring `ALARM_NOT_FOUND` errors. Throws for any other error.
 
 Listeners:
 
@@ -459,4 +477,4 @@ See [example](./example) for a complete demo.
 
 ## License
 
-MIT
+MIT © [**Saurav M Hiremath**](https://sauravmh.com)
