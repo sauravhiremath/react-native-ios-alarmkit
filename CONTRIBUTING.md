@@ -59,6 +59,12 @@ Test on earlier versions of iOS (< 26):
 - Add CHANGELOG entry
 - Ensure all checks pass
 
+## Publishing package
+
+- Run `git tag vX.Y.Z`
+- Update version in `package.json`
+- Run `git push origin vX.Y.Z`
+
 ## Questions?
 
 Open an issue or discussion.
