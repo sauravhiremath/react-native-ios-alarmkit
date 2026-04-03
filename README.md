@@ -25,6 +25,10 @@ npm add react-native-ios-alarmkit react-native-nitro-modules
 yarn add react-native-ios-alarmkit react-native-nitro-modules
 ```
 
+## Demo
+
+https://github.com/user-attachments/assets/82fa33c4-2010-416b-b385-ec9be773f7aa
+
 ## ⚙️ Configuration
 
 > [!IMPORTANT]
