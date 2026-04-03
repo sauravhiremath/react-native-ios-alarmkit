@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Linking,
   Platform,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -30,6 +31,7 @@ const COLORS = {
   cardPerm: '#1A1A1A',
   cardAlarms: '#F7F5F1',
   cardTips: '#F0EBE0',
+  cardSuccess: '#2D7A50',
   badgeAuth: '#2D6A4F',
   badgeNotDet: '#8B6914',
   badgeDenied: '#8B2020',
@@ -56,6 +58,107 @@ const stateColor = (s: AlarmState): string => {
 const platformLabel =
   Platform.OS === 'ios' ? `iOS ${Platform.Version}` : 'Android';
 
+type AuthCardProps = {
+  isLoading: boolean;
+  isScheduling: boolean;
+  authState: string | undefined;
+  onPress: () => void;
+};
+
+const AuthCard = React.memo(
+  ({ isLoading, isScheduling, authState, onPress }: AuthCardProps) => (
+    <Pressable
+      style={[
+        styles.actionCard,
+        styles.actionCardDark,
+        { width: CARD_WIDTH },
+        (isLoading || isScheduling) && styles.cardDisabled,
+      ]}
+      onPress={onPress}
+      disabled={
+        isLoading ||
+        isScheduling ||
+        (authState === 'authorized' && !AlarmKit.isSupported)
+      }>
+      {({ pressed }) => (
+        <>
+          {pressed && <View style={styles.pressOverlayLight} />}
+          {isScheduling ? (
+            <ActivityIndicator color={COLORS.textOnDark} />
+          ) : (
+            <>
+              <Text style={styles.actionCardDarkLabel}>
+                {authState === 'denied'
+                  ? 'Open\nSettings'
+                  : 'Request\nPermission'}
+              </Text>
+              <Text style={styles.actionCardDarkSub}>
+                {authState === 'authorized'
+                  ? 'Already granted'
+                  : authState === 'denied'
+                    ? 'Tap to open settings'
+                    : 'Tap to authorize'}
+              </Text>
+            </>
+          )}
+        </>
+      )}
+    </Pressable>
+  ),
+);
+
+type ScheduleCardProps = {
+  color: string;
+  isDisabled: boolean;
+  isScheduling: boolean;
+  isSuccess: boolean;
+  label: string;
+  sub: string;
+  successSub: string;
+  onPress: () => void;
+};
+
+const ScheduleCard = React.memo(
+  ({
+    color,
+    isDisabled,
+    isScheduling,
+    isSuccess,
+    label,
+    sub,
+    successSub,
+    onPress,
+  }: ScheduleCardProps) => (
+    <Pressable
+      style={[
+        styles.actionCard,
+        { backgroundColor: isSuccess ? COLORS.cardSuccess : color, width: CARD_WIDTH },
+        isDisabled && styles.cardDisabled,
+      ]}
+      onPress={onPress}
+      disabled={isDisabled}>
+      {({ pressed }) => (
+        <>
+          {pressed && <View style={styles.pressOverlayDark} />}
+          {isScheduling ? (
+            <ActivityIndicator color={isSuccess ? COLORS.textOnDark : COLORS.text} />
+          ) : isSuccess ? (
+            <>
+              <Text style={styles.actionCardSuccessLabel}>Scheduled!</Text>
+              <Text style={styles.actionCardSuccessSub}>{successSub}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.actionCardLabel}>{label}</Text>
+              <Text style={styles.actionCardSub}>{sub}</Text>
+            </>
+          )}
+        </>
+      )}
+    </Pressable>
+  ),
+);
+
 export default function App(): React.JSX.Element {
   const {
     state: authState,
@@ -65,6 +168,14 @@ export default function App(): React.JSX.Element {
   const { alarms, error: alarmsError } = useAlarms();
   const [schedulingId, setSchedulingId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showSuccess = (id: string): void => {
+    if (successTimer.current) clearTimeout(successTimer.current);
+    setSuccessId(id);
+    successTimer.current = setTimeout(() => setSuccessId(null), 1500);
+  };
 
   React.useEffect(() => {
     if (authError) Alert.alert('Authorization Error', authError.message);
@@ -74,6 +185,12 @@ export default function App(): React.JSX.Element {
     if (alarmsError) Alert.alert('Alarms Error', alarmsError.message);
   }, [alarmsError]);
 
+  React.useEffect(() => {
+    return () => {
+      if (successTimer.current) clearTimeout(successTimer.current);
+    };
+  }, []);
+
   const checkSupport = (): boolean => {
     if (!AlarmKit.isSupported) {
       Alert.alert('Not Supported', 'AlarmKit requires iOS 26 or later.');
@@ -82,7 +199,7 @@ export default function App(): React.JSX.Element {
     return true;
   };
 
-  const handleRequestAuth = async (): Promise<void> => {
+  const handleRequestAuth = useCallback(async (): Promise<void> => {
     if (!checkSupport()) return;
     if (authState === 'denied') {
       await Linking.openSettings();
@@ -96,9 +213,9 @@ export default function App(): React.JSX.Element {
     } finally {
       setSchedulingId(null);
     }
-  };
+  }, [authState]);
 
-  const handleScheduleTimer = async (): Promise<void> => {
+  const handleScheduleTimer = useCallback(async (): Promise<void> => {
     if (!checkSupport()) return;
     setSchedulingId('timer');
     try {
@@ -108,14 +225,15 @@ export default function App(): React.JSX.Element {
         snoozeEnabled: false,
         tintColor: '#5B7FA6',
       });
+      showSuccess('timer');
     } catch (e) {
       Alert.alert('Error', String(e));
     } finally {
       setSchedulingId(null);
     }
-  };
+  }, []);
 
-  const handleScheduleAlarm = async (): Promise<void> => {
+  const handleScheduleAlarm = useCallback(async (): Promise<void> => {
     if (!checkSupport()) return;
     setSchedulingId('alarm');
     try {
@@ -125,14 +243,15 @@ export default function App(): React.JSX.Element {
         snoozeEnabled: false,
         tintColor: '#2D6A4F',
       });
+      showSuccess('alarm');
     } catch (e) {
       Alert.alert('Error', String(e));
     } finally {
       setSchedulingId(null);
     }
-  };
+  }, []);
 
-  const handleScheduleDaily = async (): Promise<void> => {
+  const handleScheduleDaily = useCallback(async (): Promise<void> => {
     if (!checkSupport()) return;
     setSchedulingId('daily');
     try {
@@ -145,14 +264,15 @@ export default function App(): React.JSX.Element {
         snoozeDuration: 540,
         tintColor: '#8B6914',
       });
+      showSuccess('daily');
     } catch (e) {
       Alert.alert('Error', String(e));
     } finally {
       setSchedulingId(null);
     }
-  };
+  }, []);
 
-  const handleCancel = async (id: string): Promise<void> => {
+  const handleCancel = useCallback(async (id: string): Promise<void> => {
     setLoadingId(id);
     try {
       await AlarmKit.cancel(id);
@@ -161,9 +281,9 @@ export default function App(): React.JSX.Element {
     } finally {
       setLoadingId(null);
     }
-  };
+  }, []);
 
-  const handlePause = async (id: string): Promise<void> => {
+  const handlePause = useCallback(async (id: string): Promise<void> => {
     setLoadingId(id);
     try {
       await AlarmKit.pause(id);
@@ -172,9 +292,9 @@ export default function App(): React.JSX.Element {
     } finally {
       setLoadingId(null);
     }
-  };
+  }, []);
 
-  const handleResume = async (id: string): Promise<void> => {
+  const handleResume = useCallback(async (id: string): Promise<void> => {
     setLoadingId(id);
     try {
       await AlarmKit.resume(id);
@@ -183,7 +303,7 @@ export default function App(): React.JSX.Element {
     } finally {
       setLoadingId(null);
     }
-  };
+  }, []);
 
   const authBadgeColor =
     !AlarmKit.isSupported
@@ -204,8 +324,7 @@ export default function App(): React.JSX.Element {
           ? 'Declined'
           : 'Unknown';
 
-  const isSchedulingDisabled =
-    schedulingId !== null || authState !== 'authorized' || !AlarmKit.isSupported;
+  const scheduleDisabled = authState !== 'authorized' || !AlarmKit.isSupported;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -215,7 +334,16 @@ export default function App(): React.JSX.Element {
         showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>AlarmKit</Text>
+          <Text style={styles.title}>AlarmKit Demo</Text>
+          <Text
+            style={styles.subtitle}
+            onPress={() =>
+              Linking.openURL(
+                'https://github.com/sauravhiremath/react-native-ios-alarmkit/',
+              )
+            }>
+            react-native-ios-alarmkit
+          </Text>
         </View>
 
         {/* Info rows */}
@@ -234,108 +362,58 @@ export default function App(): React.JSX.Element {
 
         {/* Action cards grid */}
         <View style={styles.actionGrid}>
-          <TouchableOpacity
-            style={[
-              styles.actionCard,
-              styles.actionCardDark,
-              { width: CARD_WIDTH },
-              (authIsLoading || schedulingId === 'auth') && styles.cardDisabled,
-            ]}
+          <AuthCard
+            isLoading={authIsLoading}
+            isScheduling={schedulingId === 'auth'}
+            authState={authState}
             onPress={handleRequestAuth}
-            disabled={
-              authIsLoading ||
-              schedulingId === 'auth' ||
-              (authState === 'authorized' && !AlarmKit.isSupported)
-            }
-            activeOpacity={0.8}>
-            {schedulingId === 'auth' ? (
-              <ActivityIndicator color={COLORS.textOnDark} />
-            ) : (
-              <>
-                <Text style={styles.actionCardDarkLabel}>
-                  {authState === 'denied'
-                    ? 'Open\nSettings'
-                    : 'Request\nPermission'}
-                </Text>
-                <Text style={styles.actionCardDarkSub}>
-                  {authState === 'authorized'
-                    ? 'Already granted'
-                    : authState === 'denied'
-                      ? 'Tap to open settings'
-                      : 'Tap to authorize'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionCard,
-              { backgroundColor: COLORS.cardTimer, width: CARD_WIDTH },
-              isSchedulingDisabled && styles.cardDisabled,
-            ]}
+          />
+          <ScheduleCard
+            color={COLORS.cardTimer}
+            isDisabled={scheduleDisabled || schedulingId === 'timer'}
+            isScheduling={schedulingId === 'timer'}
+            isSuccess={successId === 'timer'}
+            label="5s Timer"
+            sub="Countdown · no snooze"
+            successSub="Timer Done! · 5s"
             onPress={handleScheduleTimer}
-            disabled={isSchedulingDisabled}
-            activeOpacity={0.8}>
-            {schedulingId === 'timer' ? (
-              <ActivityIndicator color={COLORS.text} />
-            ) : (
-              <>
-                <Text style={styles.actionCardLabel}>5s Timer</Text>
-                <Text style={styles.actionCardSub}>Countdown · no snooze</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionCard,
-              { backgroundColor: COLORS.cardAlarm, width: CARD_WIDTH },
-              isSchedulingDisabled && styles.cardDisabled,
-            ]}
+          />
+          <ScheduleCard
+            color={COLORS.cardAlarm}
+            isDisabled={scheduleDisabled || schedulingId === 'alarm'}
+            isScheduling={schedulingId === 'alarm'}
+            isSuccess={successId === 'alarm'}
+            label="10s Alarm"
+            sub="Fixed date · no snooze"
+            successSub="Alarm! · 10s"
             onPress={handleScheduleAlarm}
-            disabled={isSchedulingDisabled}
-            activeOpacity={0.8}>
-            {schedulingId === 'alarm' ? (
-              <ActivityIndicator color={COLORS.text} />
-            ) : (
-              <>
-                <Text style={styles.actionCardLabel}>10s Alarm</Text>
-                <Text style={styles.actionCardSub}>Fixed date · no snooze</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionCard,
-              { backgroundColor: COLORS.cardDaily, width: CARD_WIDTH },
-              isSchedulingDisabled && styles.cardDisabled,
-            ]}
+          />
+          <ScheduleCard
+            color={COLORS.cardDaily}
+            isDisabled={scheduleDisabled || schedulingId === 'daily'}
+            isScheduling={schedulingId === 'daily'}
+            isSuccess={successId === 'daily'}
+            label="Daily 7:00 AM"
+            sub="Mon–Fri · recurring"
+            successSub="Good Morning · Mon–Fri"
             onPress={handleScheduleDaily}
-            disabled={isSchedulingDisabled}
-            activeOpacity={0.8}>
-            {schedulingId === 'daily' ? (
-              <ActivityIndicator color={COLORS.text} />
-            ) : (
-              <>
-                <Text style={styles.actionCardLabel}>Daily 7:00 AM</Text>
-                <Text style={styles.actionCardSub}>Mon–Fri · recurring</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          />
         </View>
 
         {/* Active alarms */}
-        {alarms.length > 0 && (
-          <View style={styles.alarmsCard}>
-            <View style={styles.alarmsHeader}>
-              <Text style={styles.alarmsTitle}>Active Alarms</Text>
-              <View style={styles.alarmsCountBadge}>
-                <Text style={styles.alarmsCountText}>{alarms.length}</Text>
-              </View>
+        <View style={styles.alarmsCard}>
+          <View style={styles.alarmsHeader}>
+            <Text style={styles.alarmsTitle}>Active Alarms</Text>
+            <View style={styles.alarmsCountBadge}>
+              <Text style={styles.alarmsCountText}>{alarms.length}</Text>
             </View>
-            {alarms.map((alarm, index) => (
+          </View>
+          {alarms.length === 0 && (
+            <View style={styles.alarmsEmptyContainer}>
+              <Text style={styles.alarmsEmpty}>Tap above to schedule alarms</Text>
+            </View>
+          )}
+          {alarms.map((alarm, index) => (
               <View
                 key={alarm.id}
                 style={[styles.alarmRow, index === 0 && styles.alarmRowFirst]}>
@@ -363,7 +441,8 @@ export default function App(): React.JSX.Element {
                         { backgroundColor: COLORS.pauseBtn },
                       ]}
                       onPress={() => handlePause(alarm.id)}
-                      disabled={loadingId === alarm.id}>
+                      disabled={loadingId === alarm.id}
+                      activeOpacity={0.45}>
                       <Text style={styles.alarmActionBtnText}>Pause</Text>
                     </TouchableOpacity>
                   )}
@@ -374,7 +453,8 @@ export default function App(): React.JSX.Element {
                         { backgroundColor: COLORS.resumeBtn },
                       ]}
                       onPress={() => handleResume(alarm.id)}
-                      disabled={loadingId === alarm.id}>
+                      disabled={loadingId === alarm.id}
+                      activeOpacity={0.45}>
                       <Text style={styles.alarmActionBtnText}>Resume</Text>
                     </TouchableOpacity>
                   )}
@@ -384,7 +464,8 @@ export default function App(): React.JSX.Element {
                       { backgroundColor: COLORS.cancelBtn },
                     ]}
                     onPress={() => handleCancel(alarm.id)}
-                    disabled={loadingId === alarm.id}>
+                    disabled={loadingId === alarm.id}
+                    activeOpacity={0.45}>
                     {loadingId === alarm.id ? (
                       <ActivityIndicator
                         color={COLORS.textOnDark}
@@ -396,9 +477,8 @@ export default function App(): React.JSX.Element {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
-          </View>
-        )}
+          ))}
+        </View>
 
         {/* Features */}
         <View style={styles.featuresCard}>
@@ -436,6 +516,12 @@ const styles = StyleSheet.create({
     fontSize: 42,
     color: COLORS.text,
     letterSpacing: -1,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: COLORS.textMuted,
+    marginTop: 4,
+    textDecorationLine: 'underline',
   },
   infoCard: {
     backgroundColor: COLORS.cardAlarms,
@@ -484,9 +570,28 @@ const styles = StyleSheet.create({
     padding: 20,
     minHeight: 110,
     justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
   actionCardDark: {
     backgroundColor: COLORS.cardPerm,
+  },
+  pressOverlayDark: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    pointerEvents: 'none',
+  },
+  pressOverlayLight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    pointerEvents: 'none',
   },
   actionCardLabel: {
     fontSize: 16,
@@ -508,6 +613,16 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
     marginTop: 5,
   },
+  actionCardSuccessLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textOnDark,
+  },
+  actionCardSuccessSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 5,
+  },
   cardDisabled: {
     opacity: 0.45,
   },
@@ -517,6 +632,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     marginBottom: 12,
+    minHeight: 160,
+    flexDirection: 'column',
   },
   alarmsHeader: {
     flexDirection: 'row',
@@ -539,6 +656,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: COLORS.textOnDark,
+  },
+  alarmsEmptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+  alarmsEmpty: {
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   alarmRow: {
     flexDirection: 'row',

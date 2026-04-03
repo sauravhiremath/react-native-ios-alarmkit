@@ -31,7 +31,7 @@ yarn add react-native-ios-alarmkit react-native-nitro-modules
 >
 > - Supported for both Expo & Bare (Non Expo) React Native projects.
 > - AlarmKit introduced in iOS 26. On older versions, `AlarmKit.isSupported` returns `false` and all methods are silent no-ops. Your app can target iOS 15.1+.
-> - **Requires physical device** — Simulator has limited support.
+> - **Requires physical device** - Simulator has limited support.
 
 ### iOS Setup
 
