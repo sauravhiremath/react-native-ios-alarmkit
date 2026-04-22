@@ -6,7 +6,7 @@ import type {
   AlarmConfiguration,
   Subscription,
 } from './types'
-import { AlarmKitError, AlarmKitErrorCode } from './types'
+import { AlarmKitError } from './types'
 
 const AlarmKitModule = NitroModules.createHybridObject<AlarmKitSpec>('AlarmKit')
 
@@ -48,7 +48,7 @@ class AlarmKitManagerClass {
     }
   }
 
-  async cancel(id: string): Promise<void> {
+  async cancel(id: string): Promise<boolean> {
     try {
       return await AlarmKitModule.cancel(id)
     } catch (error) {
@@ -121,36 +121,8 @@ class AlarmKitManagerClass {
     id: string,
     configuration: AlarmConfiguration
   ): Promise<Alarm | null> {
-    try {
-      await this.cancel(id)
-    } catch (error) {
-      if (error instanceof AlarmKitError) {
-        if (
-          error.code !== AlarmKitErrorCode.ALARM_NOT_FOUND &&
-          error.code !== AlarmKitErrorCode.UNKNOWN
-        ) {
-          throw error
-        }
-      }
-    }
-
+    await this.cancel(id)
     return this.schedule(id, configuration)
-  }
-
-  async cancelIfExists(id: string): Promise<void> {
-    try {
-      await this.cancel(id)
-    } catch (error) {
-      if (error instanceof AlarmKitError) {
-        if (
-          error.code === AlarmKitErrorCode.ALARM_NOT_FOUND ||
-          error.code === AlarmKitErrorCode.UNKNOWN
-        ) {
-          return
-        }
-      }
-      throw error
-    }
   }
 }
 

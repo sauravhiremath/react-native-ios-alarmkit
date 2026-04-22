@@ -110,7 +110,10 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   // NOTE: cancel/stop/pause/resume/countdown are synchronous (not async) methods
   // that only throw. We use Promise.parallel to run them on a background queue.
   
-  func cancel(id: String) throws -> Promise<Void> {
+  // Idempotent cancel: pre-check via AlarmManager.shared.alarms to avoid Apple's
+  // unstable "not found" native error (domain=com.apple.AlarmKit.Alarm code=0).
+  // The catch block is a backstop for the TOCTOU race between pre-check and cancel.
+  func cancel(id: String) throws -> Promise<Bool> {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {
       return Promise.parallel { [self] in
@@ -120,16 +123,26 @@ class HybridAlarmKit: HybridAlarmKitSpec {
             code: .invalidUUID
           )
         }
-        
+
+        if let alarms = try? AlarmManager.shared.alarms,
+           !alarms.contains(where: { $0.id == alarmId }) {
+          return false
+        }
+
         do {
           try AlarmManager.shared.cancel(id: alarmId)
+          return true
         } catch {
-          throw self.wrapError(error)
+          let wrapped = self.wrapError(error)
+          if self.isAlarmNotFoundError(wrapped) {
+            return false
+          }
+          throw wrapped
         }
       }
     }
     #endif
-    return Promise.resolved(withResult: ())
+    return Promise.resolved(withResult: false)
   }
   
   func stop(id: String) throws -> Promise<Void> {
@@ -339,6 +352,14 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     )
   }
   
+  private func isAlarmNotFoundError(_ error: NSError) -> Bool {
+    guard let json = error.userInfo[NSLocalizedDescriptionKey] as? String,
+          let data = json.data(using: .utf8),
+          let info = try? JSONDecoder().decode(AlarmKitErrorInfo.self, from: data)
+    else { return false }
+    return info.code == AlarmKitErrorCode.alarmNotFound.rawValue
+  }
+
   private func detectErrorCode(_ error: NSError) -> AlarmKitErrorCode {
     #if canImport(AlarmKit)
     if #available(iOS 26.0, *) {

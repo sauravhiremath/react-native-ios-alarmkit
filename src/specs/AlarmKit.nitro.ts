@@ -10,7 +10,7 @@ export interface AlarmKit extends HybridObject<{
   requestAuthorization(): Promise<boolean>
 
   schedule(id: string, configJson: string): Promise<string>
-  cancel(id: string): Promise<void>
+  cancel(id: string): Promise<boolean>
   stop(id: string): Promise<void>
   pause(id: string): Promise<void>
   resume(id: string): Promise<void>

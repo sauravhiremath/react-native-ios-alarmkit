@@ -98,7 +98,7 @@ export const AlarmKit = {
     })
   },
 
-  async cancel(id: string): Promise<void> {
+  async cancel(id: string): Promise<boolean> {
     return AlarmKitManager.shared.cancel(id)
   },
 

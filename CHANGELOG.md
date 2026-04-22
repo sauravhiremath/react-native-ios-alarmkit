@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- `AlarmKit.cancel(id)` is now idempotent. Cancelling a non-existent alarm resolves with `false` instead of rejecting with `UNKNOWN` / `nativeCode=0`. Return type widened from `Promise<void>` to `Promise<boolean>`: `true` = alarm existed and was cancelled, `false` = no alarm with that id existed. Consumers that ignore the return value (`await AlarmKit.cancel(id)`) keep working unchanged.
+
+### Removed
+
+- `AlarmKitManager.shared.cancelIfExists(id)` — `cancel()` itself now covers this. Migration: replace `cancelIfExists(id)` with `cancel(id)`.
+
 ## [0.2.0] - 2026-01-25
 
 ### Added

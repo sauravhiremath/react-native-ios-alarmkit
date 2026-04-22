@@ -268,9 +268,16 @@ Schedule a countdown timer. `id` must be a valid UUID.
 
 Schedule a recurring alarm. `id` must be a valid UUID.
 
-#### `AlarmKit.cancel(id: string): Promise<void>`
+#### `AlarmKit.cancel(id: string): Promise<boolean>`
 
-Cancel a scheduled alarm.
+Cancel a scheduled alarm. **Idempotent** — cancelling an id that doesn't exist is a silent success, not an error.
+
+- Resolves `true` if an alarm with that id existed and was cancelled.
+- Resolves `false` if no alarm with that id existed (never registered, already cancelled, or removed by the OS).
+- Rejects with `INVALID_UUID` if `id` is not a valid UUID.
+- Rejects with a wrapped `AlarmKitError` on genuine native failures (e.g. authorization revoked mid-call).
+
+Most consumers can ignore the return value — `await AlarmKit.cancel(id)` is safe fire-and-forget.
 
 #### `AlarmKit.stop(id: string): Promise<void>`
 
@@ -333,7 +340,6 @@ Methods: `schedule`, `cancel`, `stop`, `pause`, `resume`, `countdown`, `getAlarm
 Convenience methods:
 
 - `scheduleOrReschedule(id, config)` — cancels an existing alarm with the same ID (if any) then schedules a new one. Safe to call even if the alarm doesn't exist yet.
-- `cancelIfExists(id)` — cancels an alarm, silently ignoring `ALARM_NOT_FOUND` errors. Throws for any other error.
 
 Listeners:
 
@@ -426,18 +432,17 @@ import {
 } from 'react-native-ios-alarmkit'
 
 try {
-  await AlarmKit.cancel(alarmId)
+  await AlarmKit.scheduleTimer(id, config)
 } catch (error) {
   if (error instanceof AlarmKitError) {
     console.log('Error code:', error.code)
     console.log('Error message:', error.message)
     console.log('Native error:', error.nativeError)
 
-    // Check specific error types
-    if (error.code === AlarmKitErrorCode.ALARM_NOT_FOUND) {
-      console.log('Alarm does not exist')
-    } else if (error.code === AlarmKitErrorCode.MAXIMUM_LIMIT_REACHED) {
+    if (error.code === AlarmKitErrorCode.MAXIMUM_LIMIT_REACHED) {
       console.log('Too many alarms scheduled')
+    } else if (error.code === AlarmKitErrorCode.UNAUTHORIZED) {
+      console.log('Permission not granted')
     }
   }
 }
@@ -450,7 +455,7 @@ try {
 | `INVALID_UUID`          | The alarm ID is not a valid UUID               |
 | `INVALID_JSON`          | Configuration JSON is malformed                |
 | `INVALID_CONFIGURATION` | Configuration validation failed                |
-| `ALARM_NOT_FOUND`       | Alarm doesn't exist (cancel/stop/pause/resume) |
+| `ALARM_NOT_FOUND`       | Alarm doesn't exist (stop/pause/resume)        |
 | `MAXIMUM_LIMIT_REACHED` | iOS alarm limit reached                        |
 | `UNAUTHORIZED`          | User denied alarm permission                   |
 | `ALARM_EXISTS`          | Alarm with this ID already exists              |
