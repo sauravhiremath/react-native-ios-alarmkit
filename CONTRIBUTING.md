@@ -61,9 +61,15 @@ Test on earlier versions of iOS (< 26):
 
 ## Publishing package
 
-- Run `git tag vX.Y.Z`
-- Update version in `package.json`
-- Run `git push origin vX.Y.Z`
+Order matters — the tag must point at the commit that already carries the new version, otherwise CI publishes the old version number.
+
+1. Update `version` in `package.json` and promote the `[Unreleased]` CHANGELOG section to `[X.Y.Z] - YYYY-MM-DD`
+2. `git commit -am "vX.Y.Z"`
+3. `git push origin master`
+4. `git tag vX.Y.Z`
+5. `git push origin vX.Y.Z` — this triggers `.github/workflows/publish.yml`
+
+Or use the `/publish-release` CLAUDE skill which runs all of the above with preflight checks.
 
 ## Questions?
 
