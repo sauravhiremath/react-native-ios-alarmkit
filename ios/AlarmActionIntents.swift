@@ -1,9 +1,7 @@
 #if canImport(AlarmKit) && canImport(AppIntents)
 import AppIntents
 import Foundation
-
-@available(iOS 26.0, *)
-public struct AlarmKitAppIntents: AppIntentsPackage {}
+import os
 
 @available(iOS 26.0, *)
 public struct AlarmKitStopIntent: LiveActivityIntent {
@@ -21,7 +19,7 @@ public struct AlarmKitStopIntent: LiveActivityIntent {
   }
 
   public func perform() async throws -> some IntentResult {
-    try await AlarmActionEventStore.shared.record(alarmID: alarmID, action: .stop)
+    await recordAlarmAction(.stop, alarmID: alarmID)
     return .result()
   }
 }
@@ -42,8 +40,18 @@ public struct AlarmKitSnoozeIntent: LiveActivityIntent {
   }
 
   public func perform() async throws -> some IntentResult {
-    try await AlarmActionEventStore.shared.record(alarmID: alarmID, action: .snooze)
+    await recordAlarmAction(.snooze, alarmID: alarmID)
     return .result()
+  }
+}
+
+private func recordAlarmAction(_ action: AlarmAction, alarmID: String) async {
+  do {
+    try await AlarmActionEventStore.shared.record(alarmID: alarmID, action: action)
+  } catch {
+    Logger.alarmActionEvents.error(
+      "Could not record \(action.rawValue, privacy: .public) for alarm \(alarmID, privacy: .private(mask: .hash)): \(String(describing: error), privacy: .public)"
+    )
   }
 }
 #endif

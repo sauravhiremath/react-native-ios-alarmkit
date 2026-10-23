@@ -160,21 +160,7 @@ authSub.remove()
 
 ### Alarm Action Events
 
-Alarm state updates are snapshots, not proof of a stop or snooze action. To record actions, first register the library's App Intents in your **app target**, for example in `AppDelegate.swift`:
-
-```swift
-import AppIntents
-import NitroAlarmkit
-
-@available(iOS 26.0, *)
-struct AppAlarmIntents: AppIntentsPackage {
-  static var includedPackages: [any AppIntentsPackage.Type] {
-    [AlarmKitAppIntents.self]
-  }
-}
-```
-
-Then set `trackActions: true` when you schedule an alarm or timer. This option is also available in `AlarmConfiguration` and all configuration factory options. It is off by default, so existing alarms keep their current behavior. Reschedule an existing alarm to enable tracking.
+Alarm state updates are snapshots, not proof of a stop or snooze action. To record actions, set `trackActions: true` when you schedule an alarm or timer. This option is also available in `AlarmConfiguration` and all configuration factory options. It is off by default, so existing alarms keep their current behavior. Reschedule an existing alarm to enable tracking.
 
 ```typescript
 await AlarmKit.scheduleAlarm(alarmId, {
@@ -185,15 +171,30 @@ await AlarmKit.scheduleAlarm(alarmId, {
 })
 
 const events = await AlarmKit.getPendingActionEvents()
+const savedIds: string[] = []
 for (const event of events) {
   await saveActionToYourBackend(event)
-  await AlarmKit.acknowledgeActionEvents([event.id])
+  savedIds.push(event.id)
 }
+await AlarmKit.acknowledgeActionEvents(savedIds)
 ```
+
+You do not need to add App Intents code to your app target. Xcode 26 and later merge the App Intents metadata of a static library or a static framework into the app at build time. Do not `import NitroAlarmkit` in `AppDelegate.swift`: the module requires Swift/C++ interoperability, so a standard React Native app target cannot import it.
+
+CocoaPods linkage:
+
+- Static libraries (the default) and static frameworks (`use_frameworks! :linkage => :static`): supported.
+- Dynamic frameworks (`use_frameworks! :linkage => :dynamic`): not supported. The intents stay in the metadata of `NitroAlarmkit.framework`, and the app has no App Intents metadata. Apple requires an app-level [`AppIntentsPackage`](https://sosumi.ai/documentation/appintents/appintentspackage) for intents in a framework, and the app target cannot import this module.
+
+> **Expo:** No native file changes are needed, so `expo prebuild --clean` keeps the setup. You do not need a config plugin for action tracking. If you use `expo-build-properties`, `ios.useFrameworks: "static"` is supported and `"dynamic"` is not.
+
+To check the setup, build your app and look in `YourApp.app/Metadata.appintents/extract.actionsdata`. The file must contain `AlarmKitStopIntent` and `AlarmKitSnoozeIntent`.
 
 `saveActionToYourBackend` is your app's own storage or analytics call. Use `event.id` to prevent duplicate processing. Read events on app start and each time the app returns to the foreground. A read does not remove events. Acknowledge only the IDs you have saved; events that arrive during processing remain in storage. Unacknowledged events remain until you acknowledge them or the app's data is removed. Process them regularly to limit storage use.
 
-Each event has a unique `id`, the `alarmId`, an `action` (`'stop'` or `'snooze'`), and a Unix `timestamp` in milliseconds. Native App Intents save these records without JavaScript. The stop and countdown actions remain under AlarmKit's control.
+Each event has a unique `id`, the `alarmId`, an `action` (`'stop'` or `'snooze'`), and a Unix `timestamp` in milliseconds (an integer). Native App Intents save these records without JavaScript. The stop and countdown actions remain under AlarmKit's control.
+
+`event.alarmId` is the exact string that you passed when you scheduled the alarm, so `event.alarmId === id` works for your own IDs. `getAlarms()` returns IDs in upper case. When you join events with `getAlarms()`, compare the IDs case-insensitively.
 
 Limits:
 
@@ -201,11 +202,12 @@ Limits:
 - Snooze is recorded only when iOS runs the secondary intent for a countdown button. A custom secondary button is not tracked. Snooze coverage must be checked on physical devices and each supported iOS version.
 - Records describe intent execution, not inferred state changes. Missing alarms, `stop()`/`cancel()`/`countdown()` calls from JavaScript, and buttons with your own widget intents do not create these records.
 - Background or terminated apps do not get an immediate JavaScript callback. Do not depend on exactly-once delivery or complete coverage of every system dismissal path.
-- Events use local app storage, not a shared widget container. Storage can be unavailable before the first device unlock after restart; native storage failures are not hidden.
+- Events use local app storage, not a shared widget container. This storage is not available before the first unlock after a device restart (for example, after an overnight iOS update). A stop or snooze before the first unlock is not recorded. The intent does not fail in this case. The library writes the failure to the system log (`os.Logger`); JavaScript does not receive it.
+- If the event file cannot be decoded, or has an unknown format version, the library moves it to `action-events.corrupt-<unix-ms>.json` in the same folder and continues with an empty list. The library does not delete the moved file. Events in that file are not returned.
 
 Before release, test stop/dismiss and snooze on a physical device with the app in the foreground, in the background, and terminated. Repeat with the screen locked and, if used, a paired Apple Watch. Check that snooze still alerts again, that stop still stops, and that saved IDs remain stable until acknowledgement. These device checks are not covered by the automated tests.
 
-See [Apple's action intent documentation](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit) and [App Intents package setup](https://sosumi.ai/documentation/appintents/appintentspackage).
+See [Apple's action intent documentation](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit).
 
 ## Widget Extension / Live Activities Requirements
 
@@ -355,7 +357,7 @@ Read saved action events without removing them. Returns `[]` on unsupported plat
 
 #### `AlarmKit.acknowledgeActionEvents(eventIds: string[]): Promise<void>`
 
-Remove only the listed event IDs after processing. Unknown IDs and empty arrays are safe no-ops. Unsupported platforms also return without changes. Read and acknowledgement failures reject with `AlarmKitError`.
+Remove only the listed event IDs after processing. Unknown IDs and empty arrays are safe no-ops. Unsupported platforms also return without changes. Storage read and write failures (for example, before the first unlock after a restart) reject with `AlarmKitError`. An event file that cannot be decoded does not cause a rejection. See the limits in [Alarm Action Events](#alarm-action-events).
 
 #### `AlarmKit.addAlarmsListener(callback): Subscription`
 

@@ -95,7 +95,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
         }
         
         do {
-          let config = try self.parseConfiguration(configJson, alarmID: alarmId)
+          let config = try self.parseConfiguration(configJson, alarmID: id)
           let alarm = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
           return self.encodeAlarmToJson(alarm)
         } catch {
@@ -531,7 +531,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   @available(iOS 26.0, *)
-  private func parseConfiguration(_ json: String, alarmID: UUID) throws -> AlarmManager.AlarmConfiguration<EmptyMetadata> {
+  private func parseConfiguration(_ json: String, alarmID: String) throws -> AlarmManager.AlarmConfiguration<EmptyMetadata> {
     guard let data = json.data(using: .utf8) else {
       throw wrapError(
         NSError(domain: "AlarmKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"]),
@@ -579,18 +579,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
       // Parse sound - explicit type required for enum inference
       let sound: AlertConfiguration.AlertSound = config.soundName != nil ? .named(config.soundName!) : .default
 
-      let trackActions = config.trackActions == true
-      let trackSnooze = trackActions
-        && config.presentation.alert.secondaryButton != nil
-        && (config.presentation.alert.secondaryButtonBehavior ?? "countdown") == "countdown"
-      
+      let tracking = AlarmActionTracking.resolve(
+        trackActions: config.trackActions,
+        hasSecondaryButton: config.presentation.alert.secondaryButton != nil,
+        secondaryButtonBehavior: config.presentation.alert.secondaryButtonBehavior
+      )
+
       // Create alarm configuration with all parameters
       let alarmConfig = AlarmManager.AlarmConfiguration(
         countdownDuration: countdownDuration,
         schedule: schedule,
         attributes: attributes,
-        stopIntent: trackActions ? AlarmKitStopIntent(alarmID: alarmID.uuidString) : nil,
-        secondaryIntent: trackSnooze ? AlarmKitSnoozeIntent(alarmID: alarmID.uuidString) : nil,
+        stopIntent: tracking.tracksStop ? AlarmKitStopIntent(alarmID: alarmID) : nil,
+        secondaryIntent: tracking.tracksSnooze ? AlarmKitSnoozeIntent(alarmID: alarmID) : nil,
         sound: sound
       )
       

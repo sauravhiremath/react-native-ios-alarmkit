@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Dimensions,
   Linking,
   Platform,
@@ -18,7 +19,7 @@ import AlarmKit, {
   useAlarms,
   useAuthorizationState,
 } from 'react-native-ios-alarmkit';
-import type { AlarmState } from 'react-native-ios-alarmkit';
+import type { AlarmActionEvent, AlarmState } from 'react-native-ios-alarmkit';
 
 const COLORS = {
   bg: '#F5F0E8',
@@ -169,6 +170,8 @@ export default function App(): React.JSX.Element {
   const [schedulingId, setSchedulingId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [actionEvents, setActionEvents] = useState<AlarmActionEvent[]>([]);
+  const [actionEventsBusy, setActionEventsBusy] = useState(false);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showSuccess = (id: string): void => {
@@ -190,6 +193,34 @@ export default function App(): React.JSX.Element {
       if (successTimer.current) clearTimeout(successTimer.current);
     };
   }, []);
+
+  const refreshActionEvents = useCallback(async (): Promise<void> => {
+    try {
+      setActionEvents(await AlarmKit.getPendingActionEvents());
+    } catch (e) {
+      Alert.alert('Action Events Error', String(e));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    refreshActionEvents();
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') refreshActionEvents();
+    });
+    return () => subscription.remove();
+  }, [refreshActionEvents]);
+
+  const handleAcknowledgeEvents = useCallback(async (): Promise<void> => {
+    setActionEventsBusy(true);
+    try {
+      await AlarmKit.acknowledgeActionEvents(actionEvents.map(e => e.id));
+      await refreshActionEvents();
+    } catch (e) {
+      Alert.alert('Action Events Error', String(e));
+    } finally {
+      setActionEventsBusy(false);
+    }
+  }, [actionEvents, refreshActionEvents]);
 
   const checkSupport = (): boolean => {
     if (!AlarmKit.isSupported) {
@@ -240,8 +271,10 @@ export default function App(): React.JSX.Element {
       await AlarmKit.scheduleTimer('00000000-0000-0000-0000-000000000002', {
         duration: 10,
         title: 'Alarm!',
-        snoozeEnabled: false,
+        snoozeEnabled: true,
+        snoozeDuration: 10,
         tintColor: '#2D6A4F',
+        trackActions: true,
       });
       showSuccess('alarm');
     } catch (e) {
@@ -384,7 +417,7 @@ export default function App(): React.JSX.Element {
             isScheduling={schedulingId === 'alarm'}
             isSuccess={successId === 'alarm'}
             label="10s Alarm"
-            sub="Fixed date · no snooze"
+            sub="Tracked · 10s snooze"
             successSub="Alarm! · 10s"
             onPress={handleScheduleAlarm}
           />
@@ -478,6 +511,73 @@ export default function App(): React.JSX.Element {
                 </View>
               </View>
           ))}
+        </View>
+
+        {/* Action events */}
+        <View style={styles.alarmsCard}>
+          <View style={styles.alarmsHeader}>
+            <Text style={styles.alarmsTitle}>Action Events</Text>
+            <View style={styles.alarmsCountBadge}>
+              <Text style={styles.alarmsCountText}>{actionEvents.length}</Text>
+            </View>
+          </View>
+          {actionEvents.length === 0 && (
+            <View style={styles.alarmsEmptyContainer}>
+              <Text style={styles.alarmsEmpty}>
+                Stop or snooze the 10s Alarm to record an event
+              </Text>
+            </View>
+          )}
+          {actionEvents.map((event, index) => (
+            <View
+              key={event.id}
+              style={[styles.alarmRow, index === 0 && styles.alarmRowFirst]}>
+              <View style={styles.alarmInfo}>
+                <View
+                  style={[
+                    styles.alarmStateBadge,
+                    {
+                      backgroundColor:
+                        event.action === 'stop'
+                          ? COLORS.cancelBtn
+                          : COLORS.statePaused,
+                    },
+                  ]}>
+                  <Text style={styles.alarmStateBadgeText}>{event.action}</Text>
+                </View>
+                <Text style={styles.alarmIdText}>
+                  {event.alarmId.slice(0, 8) + '…'}
+                </Text>
+              </View>
+              <Text style={styles.alarmIdText}>
+                {new Date(event.timestamp).toLocaleTimeString()}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.eventActions}>
+            <TouchableOpacity
+              style={[styles.alarmActionBtn, { backgroundColor: COLORS.text }]}
+              onPress={refreshActionEvents}
+              disabled={actionEventsBusy}
+              activeOpacity={0.45}>
+              <Text style={styles.alarmActionBtnText}>Refresh</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.alarmActionBtn,
+                { backgroundColor: COLORS.resumeBtn },
+                actionEvents.length === 0 && styles.cardDisabled,
+              ]}
+              onPress={handleAcknowledgeEvents}
+              disabled={actionEventsBusy || actionEvents.length === 0}
+              activeOpacity={0.45}>
+              {actionEventsBusy ? (
+                <ActivityIndicator color={COLORS.textOnDark} size="small" />
+              ) : (
+                <Text style={styles.alarmActionBtnText}>Acknowledge</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Features */}
@@ -715,6 +815,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.textOnDark,
+  },
+  eventActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 6,
+    marginTop: 8,
   },
   featuresCard: {
     backgroundColor: COLORS.cardTips,

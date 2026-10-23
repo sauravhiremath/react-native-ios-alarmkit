@@ -2,11 +2,23 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+def reactNativeDependencyDir = { String name ->
+    new File(
+        providers.exec {
+            workingDir(rootDir)
+            commandLine("node", "--print", "require.resolve('${name}/package.json', { paths: [require.resolve('react-native/package.json')] })")
+        }.standardOutput.asText.get().trim()
+    ).getParentFile().absoluteFile
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
  */
 react {
+    codegenDir = reactNativeDependencyDir("@react-native/codegen")
+    hermesCommand = reactNativeDependencyDir("hermes-compiler").absolutePath + "/hermesc/%OS-BIN%/hermesc"
+
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
     // root = file("../../")
