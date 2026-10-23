@@ -95,7 +95,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
         }
         
         do {
-          let config = try self.parseConfiguration(configJson)
+          let config = try self.parseConfiguration(configJson, alarmID: alarmId)
           let alarm = try await AlarmManager.shared.schedule(id: alarmId, configuration: config)
           return self.encodeAlarmToJson(alarm)
         } catch {
@@ -276,6 +276,38 @@ class HybridAlarmKit: HybridAlarmKitSpec {
     }
     #endif
     return ""
+  }
+
+  func getPendingActionEvents() throws -> Promise<String> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.async { [self] in
+        do {
+          let events = try await AlarmActionEventStore.shared.pendingEvents()
+          let data = try JSONEncoder().encode(events)
+          return String(decoding: data, as: UTF8.self)
+        } catch {
+          throw self.wrapError(error)
+        }
+      }
+    }
+    #endif
+    return Promise.resolved(withResult: "[]")
+  }
+
+  func acknowledgeActionEvents(eventIds: [String]) throws -> Promise<Void> {
+    #if canImport(AlarmKit)
+    if #available(iOS 26.0, *) {
+      return Promise.async { [self] in
+        do {
+          try await AlarmActionEventStore.shared.acknowledge(eventIDs: eventIds)
+        } catch {
+          throw self.wrapError(error)
+        }
+      }
+    }
+    #endif
+    return Promise.resolved(withResult: ())
   }
   
   func removeAlarmsListener(subscriptionId: String) throws {
@@ -499,7 +531,7 @@ class HybridAlarmKit: HybridAlarmKitSpec {
   }
   
   @available(iOS 26.0, *)
-  private func parseConfiguration(_ json: String) throws -> AlarmManager.AlarmConfiguration<EmptyMetadata> {
+  private func parseConfiguration(_ json: String, alarmID: UUID) throws -> AlarmManager.AlarmConfiguration<EmptyMetadata> {
     guard let data = json.data(using: .utf8) else {
       throw wrapError(
         NSError(domain: "AlarmKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"]),
@@ -546,14 +578,19 @@ class HybridAlarmKit: HybridAlarmKitSpec {
       
       // Parse sound - explicit type required for enum inference
       let sound: AlertConfiguration.AlertSound = config.soundName != nil ? .named(config.soundName!) : .default
+
+      let trackActions = config.trackActions == true
+      let trackSnooze = trackActions
+        && config.presentation.alert.secondaryButton != nil
+        && (config.presentation.alert.secondaryButtonBehavior ?? "countdown") == "countdown"
       
       // Create alarm configuration with all parameters
       let alarmConfig = AlarmManager.AlarmConfiguration(
         countdownDuration: countdownDuration,
         schedule: schedule,
         attributes: attributes,
-        stopIntent: nil,
-        secondaryIntent: nil,
+        stopIntent: trackActions ? AlarmKitStopIntent(alarmID: alarmID.uuidString) : nil,
+        secondaryIntent: trackSnooze ? AlarmKitSnoozeIntent(alarmID: alarmID.uuidString) : nil,
         sound: sound
       )
       
@@ -718,6 +755,7 @@ struct AlarmConfigurationData: Codable {
   let tintColor: String?
   let soundName: String?
   let metadata: [String: String]?
+  let trackActions: Bool?
 }
 
 struct CountdownDurationData: Codable {

@@ -30,3 +30,22 @@ jobs:
 
       - name: Run TypeScript type check
         run: bun run typecheck
+
+      - name: Run action event API tests
+        run: node --test tests/alarm-action-events.test.cjs
+
+  swift-tests:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Type check iOS action intents
+        run: xcrun swiftc -typecheck -strict-concurrency=complete -warnings-as-errors -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target arm64-apple-ios15.1-simulator ios/AlarmActionEventStore.swift ios/AlarmActionIntents.swift
+
+      - name: Compile action event store tests
+        run: swiftc -parse-as-library -strict-concurrency=complete -warnings-as-errors ios/AlarmActionEventStore.swift tests/swift/AlarmActionEventStoreTests.swift -o "$RUNNER_TEMP/alarm-action-event-tests"
+
+      - name: Run action event store tests
+        run: '"$RUNNER_TEMP/alarm-action-event-tests"'

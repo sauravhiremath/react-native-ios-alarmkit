@@ -8,6 +8,7 @@ React Native wrapper for iOS AlarmKit framework. Schedule alarms, timers, and co
 - Advanced API with 1:1 native AlarmKit mapping
 - React Hooks for automatic state updates
 - Event listeners for real-time alarm changes
+- Opt-in, saved stop/dismiss and snooze action events for analytics
 - Custom alert presentations with buttons, colors, and SF Symbols
 - Live Activities support
 - Silent no-op on Android and iOS < 26
@@ -157,6 +158,55 @@ alarmsSub.remove()
 authSub.remove()
 ```
 
+### Alarm Action Events
+
+Alarm state updates are snapshots, not proof of a stop or snooze action. To record actions, first register the library's App Intents in your **app target**, for example in `AppDelegate.swift`:
+
+```swift
+import AppIntents
+import NitroAlarmkit
+
+@available(iOS 26.0, *)
+struct AppAlarmIntents: AppIntentsPackage {
+  static var includedPackages: [any AppIntentsPackage.Type] {
+    [AlarmKitAppIntents.self]
+  }
+}
+```
+
+Then set `trackActions: true` when you schedule an alarm or timer. This option is also available in `AlarmConfiguration` and all configuration factory options. It is off by default, so existing alarms keep their current behavior. Reschedule an existing alarm to enable tracking.
+
+```typescript
+await AlarmKit.scheduleAlarm(alarmId, {
+  hour: 7,
+  minute: 0,
+  title: 'Wake Up!',
+  trackActions: true,
+})
+
+const events = await AlarmKit.getPendingActionEvents()
+for (const event of events) {
+  await saveActionToYourBackend(event)
+  await AlarmKit.acknowledgeActionEvents([event.id])
+}
+```
+
+`saveActionToYourBackend` is your app's own storage or analytics call. Use `event.id` to prevent duplicate processing. Read events on app start and each time the app returns to the foreground. A read does not remove events. Acknowledge only the IDs you have saved; events that arrive during processing remain in storage. Unacknowledged events remain until you acknowledge them or the app's data is removed. Process them regularly to limit storage use.
+
+Each event has a unique `id`, the `alarmId`, an `action` (`'stop'` or `'snooze'`), and a Unix `timestamp` in milliseconds. Native App Intents save these records without JavaScript. The stop and countdown actions remain under AlarmKit's control.
+
+Limits:
+
+- Stop and dismiss share the `'stop'` action. A stop intent can also run when a countdown is stopped; it does not prove that an alarm rang.
+- Snooze is recorded only when iOS runs the secondary intent for a countdown button. A custom secondary button is not tracked. Snooze coverage must be checked on physical devices and each supported iOS version.
+- Records describe intent execution, not inferred state changes. Missing alarms, `stop()`/`cancel()`/`countdown()` calls from JavaScript, and buttons with your own widget intents do not create these records.
+- Background or terminated apps do not get an immediate JavaScript callback. Do not depend on exactly-once delivery or complete coverage of every system dismissal path.
+- Events use local app storage, not a shared widget container. Storage can be unavailable before the first device unlock after restart; native storage failures are not hidden.
+
+Before release, test stop/dismiss and snooze on a physical device with the app in the foreground, in the background, and terminated. Repeat with the screen locked and, if used, a paired Apple Watch. Check that snooze still alerts again, that stop still stops, and that saved IDs remain stable until acknowledgement. These device checks are not covered by the automated tests.
+
+See [Apple's action intent documentation](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit) and [App Intents package setup](https://sosumi.ai/documentation/appintents/appintentspackage).
+
 ## Widget Extension / Live Activities Requirements
 
 A Widget Extension is **required** for the following features:
@@ -299,6 +349,14 @@ Start countdown for a scheduled alarm.
 
 Get all active alarms.
 
+#### `AlarmKit.getPendingActionEvents(): Promise<AlarmActionEvent[]>`
+
+Read saved action events without removing them. Returns `[]` on unsupported platforms. See [Alarm Action Events](#alarm-action-events) for required setup and limits.
+
+#### `AlarmKit.acknowledgeActionEvents(eventIds: string[]): Promise<void>`
+
+Remove only the listed event IDs after processing. Unknown IDs and empty arrays are safe no-ops. Unsupported platforms also return without changes. Read and acknowledgement failures reject with `AlarmKitError`.
+
 #### `AlarmKit.addAlarmsListener(callback): Subscription`
 
 Subscribe to alarm changes.
@@ -335,7 +393,7 @@ interface UseAuthorizationResult {
 
 Singleton mirroring native `AlarmManager.shared`.
 
-Methods: `schedule`, `cancel`, `stop`, `pause`, `resume`, `countdown`, `getAlarms`, `getAuthorizationState`, `requestAuthorization`.
+Methods: `schedule`, `cancel`, `stop`, `pause`, `resume`, `countdown`, `getAlarms`, `getPendingActionEvents`, `acknowledgeActionEvents`, `getAuthorizationState`, `requestAuthorization`.
 
 Convenience methods:
 
@@ -383,6 +441,15 @@ interface Alarm {
   schedule: AlarmSchedule | null
 }
 
+type AlarmAction = 'stop' | 'snooze'
+
+interface AlarmActionEvent {
+  id: string
+  alarmId: string
+  action: AlarmAction
+  timestamp: number
+}
+
 interface SimpleTimerConfig {
   duration: number // seconds
   title: string
@@ -390,6 +457,7 @@ interface SimpleTimerConfig {
   snoozeDuration?: number // seconds, default 300
   tintColor?: string // hex color
   sound?: string // custom sound filename
+  trackActions?: boolean
 }
 
 interface SimpleAlarmConfig {
@@ -401,6 +469,7 @@ interface SimpleAlarmConfig {
   snoozeDuration?: number // seconds, default 540
   tintColor?: string
   sound?: string
+  trackActions?: boolean
 }
 
 interface AlarmButton {

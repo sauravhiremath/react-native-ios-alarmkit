@@ -1,6 +1,7 @@
 import { AlarmKitManager } from './AlarmKitManager'
 import type {
   Alarm,
+  AlarmActionEvent,
   AuthorizationState,
   Subscription,
   SimpleTimerConfig,
@@ -60,6 +61,7 @@ export const AlarmKit = {
       },
       tintColor: config.tintColor,
       soundName: config.sound,
+      trackActions: config.trackActions,
     })
   },
 
@@ -95,6 +97,7 @@ export const AlarmKit = {
       },
       tintColor: config.tintColor,
       soundName: config.sound,
+      trackActions: config.trackActions,
     })
   },
 
@@ -120,6 +123,14 @@ export const AlarmKit = {
 
   async getAlarms(): Promise<Alarm[]> {
     return AlarmKitManager.shared.getAlarms()
+  },
+
+  async getPendingActionEvents(): Promise<AlarmActionEvent[]> {
+    return AlarmKitManager.shared.getPendingActionEvents()
+  },
+
+  async acknowledgeActionEvents(eventIds: string[]): Promise<void> {
+    return AlarmKitManager.shared.acknowledgeActionEvents(eventIds)
   },
 
   addAlarmsListener(callback: (alarms: Alarm[]) => void): Subscription {

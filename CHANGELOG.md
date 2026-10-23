@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Opt-in `trackActions` for alarms and timers. Native App Intents save stop/dismiss and snooze intent executions for later processing. Requires App Intents package registration in the app target; snooze coverage needs physical-device testing.
+- `getPendingActionEvents()` and `acknowledgeActionEvents(eventIds)` on both APIs, with typed event IDs, alarm IDs, actions, and Unix millisecond timestamps. Reads preserve events until explicit acknowledgement. Unsupported platforms remain no-ops.
+
 ## [0.7.6] - 2026-04-22
 
 ### Changed

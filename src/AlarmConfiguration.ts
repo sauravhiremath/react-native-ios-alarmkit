@@ -13,6 +13,7 @@ export interface TimerOptions {
     tintColor?: string
   }
   sound?: string
+  trackActions?: boolean
 }
 
 export interface AlarmOptions {
@@ -23,6 +24,7 @@ export interface AlarmOptions {
     tintColor?: string
   }
   sound?: string
+  trackActions?: boolean
 }
 
 export interface FullOptions {
@@ -34,6 +36,7 @@ export interface FullOptions {
     tintColor?: string
   }
   sound?: string
+  trackActions?: boolean
 }
 
 export const AlarmConfigurationFactory = {
@@ -47,6 +50,7 @@ export const AlarmConfigurationFactory = {
       metadata: options.attributes.metadata,
       tintColor: options.attributes.tintColor,
       soundName: options.sound,
+      trackActions: options.trackActions,
     }
   },
 
@@ -61,6 +65,7 @@ export const AlarmConfigurationFactory = {
       metadata: options.attributes.metadata,
       tintColor: options.attributes.tintColor,
       soundName: options.sound,
+      trackActions: options.trackActions,
     }
   },
 
@@ -72,6 +77,7 @@ export const AlarmConfigurationFactory = {
       metadata: options.attributes.metadata,
       tintColor: options.attributes.tintColor,
       soundName: options.sound,
+      trackActions: options.trackActions,
     }
   },
 }
