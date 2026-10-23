@@ -2,6 +2,7 @@ import { NitroModules } from 'react-native-nitro-modules'
 import type { AlarmKit as AlarmKitSpec } from './specs/AlarmKit.nitro'
 import type {
   Alarm,
+  AlarmActionEvent,
   AuthorizationState,
   AlarmConfiguration,
   Subscription,
@@ -92,6 +93,23 @@ class AlarmKitManagerClass {
     try {
       const json = await AlarmKitModule.getAlarms()
       return JSON.parse(json)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
+  }
+
+  async getPendingActionEvents(): Promise<AlarmActionEvent[]> {
+    try {
+      const json = await AlarmKitModule.getPendingActionEvents()
+      return JSON.parse(json)
+    } catch (error) {
+      throw AlarmKitError.fromError(error)
+    }
+  }
+
+  async acknowledgeActionEvents(eventIds: string[]): Promise<void> {
+    try {
+      await AlarmKitModule.acknowledgeActionEvents(eventIds)
     } catch (error) {
       throw AlarmKitError.fromError(error)
     }

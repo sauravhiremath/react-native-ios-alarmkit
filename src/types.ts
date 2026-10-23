@@ -135,6 +135,7 @@ export interface AlarmConfiguration {
   tintColor?: string
   soundName?: string
   metadata?: Record<string, string>
+  trackActions?: boolean
 }
 
 export type AlarmState = 'scheduled' | 'countdown' | 'paused' | 'alerting'
@@ -144,6 +145,15 @@ export interface Alarm {
   state: AlarmState
   countdownDuration: CountdownDuration | null
   schedule: AlarmSchedule | null
+}
+
+export type AlarmAction = 'stop' | 'snooze'
+
+export interface AlarmActionEvent {
+  id: string
+  alarmId: string
+  action: AlarmAction
+  timestamp: number
 }
 
 export interface Subscription {
@@ -157,6 +167,7 @@ export interface SimpleTimerConfig {
   snoozeDuration?: number
   tintColor?: string
   sound?: string
+  trackActions?: boolean
 }
 
 export interface SimpleAlarmConfig {
@@ -168,4 +179,5 @@ export interface SimpleAlarmConfig {
   snoozeDuration?: number
   tintColor?: string
   sound?: string
+  trackActions?: boolean
 }

@@ -17,6 +17,8 @@ export interface AlarmKit extends HybridObject<{
   countdown(id: string): Promise<void>
 
   getAlarms(): Promise<string>
+  getPendingActionEvents(): Promise<string>
+  acknowledgeActionEvents(eventIds: string[]): Promise<void>
 
   addAlarmsListener(callback: (alarmsJson: string) => void): string
   removeAlarmsListener(subscriptionId: string): void

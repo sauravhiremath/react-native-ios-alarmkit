@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - NitroAlarmkit (0.7.4):
+  - NitroAlarmkit (0.7.6):
     - boost
     - DoubleConversion
     - fast_float
@@ -2856,8 +2856,8 @@ SPEC CHECKSUMS:
   FBLazyVector: a293a88992c4c33f0aee184acab0b64a08ff9458
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: 19757ef327dfcb6fd9bc881e495b1e2c11d1bfd5
-  NitroAlarmkit: 6288fa8149a16bf4ab7f0b36683a1c608e4bec64
+  hermes-engine: ea6f66099727135844b8248b07a396de3f40fe52
+  NitroAlarmkit: 8bd338abe12918735fe9e3d33204b83fbba64b6e
   NitroModules: 1ef0796714251dbdaea49af187e291d8b6a7c5ea
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 2b70c6e3abe00396cefd8913efbf6a2db01a2b36

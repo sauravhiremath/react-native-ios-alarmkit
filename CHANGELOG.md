@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Opt-in `trackActions` for alarms and timers. Native App Intents save stop/dismiss and snooze intent executions for later processing. No app target code is needed with static library or static framework linkage (Xcode 26 or later merges the intent metadata); dynamic frameworks are not supported. Snooze coverage needs physical-device testing.
+- `getPendingActionEvents()` and `acknowledgeActionEvents(eventIds)` on both APIs, with typed event IDs, alarm IDs, actions, and integer Unix millisecond timestamps. `alarmId` is the exact ID string passed to schedule. Reads preserve events until explicit acknowledgement. Unsupported platforms remain no-ops.
+- Event storage uses a versioned file format. A file that cannot be decoded, or has an unknown version, is moved to `action-events.corrupt-<unix-ms>.json` and tracking continues with an empty list; it is not reported as an error. Storage read failures, such as before the first unlock after a restart, still reject in JavaScript. Stop and snooze intents never fail because of storage: they log the failure and the action is not recorded.
+
 ## [0.7.6] - 2026-04-22
 
 ### Changed

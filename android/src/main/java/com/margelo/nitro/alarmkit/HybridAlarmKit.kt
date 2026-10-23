@@ -26,6 +26,10 @@ class HybridAlarmKit : HybridAlarmKitSpec() {
 
   override fun getAlarms(): Promise<String> = Promise.resolved("[]")
 
+  override fun getPendingActionEvents(): Promise<String> = Promise.resolved("[]")
+
+  override fun acknowledgeActionEvents(eventIds: Array<String>): Promise<Unit> = Promise.resolved(Unit)
+
   override fun addAlarmsListener(callback: (String) -> Unit): String = ""
 
   override fun removeAlarmsListener(subscriptionId: String) {
