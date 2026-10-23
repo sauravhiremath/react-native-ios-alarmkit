@@ -49,7 +49,30 @@ https://github.com/user-attachments/assets/82fa33c4-2010-416b-b385-ec9be773f7aa
 
 > **Required.** If missing or empty, AlarmKit cannot schedule alarms.
 
-2. Install pods:
+2. Add the bundled Swift core inside your application target in `ios/Podfile`:
+
+```ruby
+pod 'AlarmKitCore', :path => File.dirname(
+  Pod::Executable.execute_command('node', ['-p', "require.resolve('react-native-ios-alarmkit/package.json')"]).strip
+)
+```
+
+React Native links `NitroAlarmkit` automatically. The core contains the alarm logic and has no Nitro dependency.
+Both pods come from this npm package. No separate CocoaPods release is required.
+
+3. Select action registration for your linkage type:
+
+| CocoaPods linkage | App-target action registration |
+| --- | --- |
+| Default static libraries | No extra source file |
+| Static frameworks | No extra source file |
+| Dynamic frameworks | Add `plugin/AlarmKitAppIntents.swift` from the installed package to your application target |
+
+For dynamic frameworks, copy the canonical source into your app and add it to the app's **Compile Sources** phase.
+The file imports `AlarmKitCore`, not `NitroAlarmkit`. It needs no app-target C++ settings or header patches.
+Do not copy the Stop or Snooze handler implementations into your app.
+
+4. Install pods:
 
 ```bash
 cd ios && pod install
@@ -62,6 +85,27 @@ No setup required. Returns `isSupported: false`.
 ### Expo
 
 Requires native code. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) with `npx expo prebuild`.
+
+Add the explicit plugin to your app configuration:
+
+```json
+{
+  "expo": {
+    "plugins": ["react-native-ios-alarmkit"],
+    "ios": {
+      "infoPlist": {
+        "NSAlarmKitUsageDescription": "Schedule alarms you create in this app."
+      }
+    }
+  }
+}
+```
+
+The plugin adds the core pod and the app registration file. It does not select linkage, add permissions, or create a widget extension.
+Select dynamic linkage through your app's `expo-build-properties` configuration when needed.
+With Expo 58, `npx expo prebuild --platform ios` recreates native folders by default.
+Use `--no-clean` to update an existing generated project. Earlier Expo versions use `--clean` for clean generation.
+Preserve manual native changes before a clean prebuild.
 
 ## ⚙️ Usage
 
@@ -179,9 +223,9 @@ for (const event of events) {
 await AlarmKit.acknowledgeActionEvents(savedIds)
 ```
 
-**Setup:** Requires Xcode 26+ and static CocoaPods linkage: the default, or `use_frameworks! :linkage => :static`. Dynamic frameworks are not supported. No app-level App Intents code or Expo config plugin is needed. Do not add `import NitroAlarmkit` to `AppDelegate.swift`.
-
-For `expo-build-properties`, use `ios.useFrameworks: "static"`. Action tracking setup survives `expo prebuild --clean`.
+**Setup:** Build with an SDK that provides AlarmKit, introduced in Xcode 26. Follow the linkage table above.
+Dynamic apps register `AlarmKitIntentsPackage` through the canonical app source. Expo apps use the explicit plugin.
+Do not import `NitroAlarmkit` in `AppDelegate.swift`.
 
 Replace `saveActionToYourBackend` with your storage or analytics call. Read events at app start and on return to the foreground. Use `event.id` to prevent duplicate processing, and acknowledge only saved IDs. Other events remain stored until acknowledged or app data is removed; process them regularly to limit storage use.
 
@@ -207,7 +251,7 @@ A Widget Extension is **required** for the following features:
 | ------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
 | `AlarmKit.scheduleAlarm()`      | **No**                     | Works without Widget Extension - basic alarm functionality                                         |
 | `AlarmKit.scheduleTimer()`      | **Yes**                    | Timers show countdown UI in Dynamic Island, Lock Screen, and StandBy                               |
-| Snooze with countdown UI        | **Yes (recommended)**      | Without Widget Extension, snooze may work but countdown UI won't display properly                  |
+| Snooze with countdown UI        | **Yes**                    | Snooze starts a countdown; test it with an embedded widget extension                               |
 | Advanced configs with countdown | **Yes**                    | Custom alarms using `AlarmKitManager.shared.schedule()` with `countdown` or `paused` presentations |
 
 **What happens without Widget Extension:**
@@ -218,7 +262,8 @@ A Widget Extension is **required** for the following features:
 
 **For advanced configurations** with countdown presentations (pre-alert countdown, custom timers, etc.), use `AlarmKitManager.shared.schedule()` directly with full `AlarmConfiguration` and ensure your app has a Widget Extension.
 
-See [Live Activity Setup Guide](./docs/LIVE_ACTIVITY_SETUP.md) for implementation details.
+See the [Live Activity Setup Guide](https://github.com/sauravhiremath/react-native-ios-alarmkit/blob/master/docs/LIVE_ACTIVITY_SETUP.md) and the example's `AlarmKitCountdown` target.
+The public `metadata` input remains accepted, but the native implementation uses empty `AlarmKitMetadata`. It does not deliver custom metadata to widgets.
 
 ### Advanced API
 
@@ -302,11 +347,11 @@ Returns `'notDetermined'`, `'authorized'`, or `'denied'`.
 
 Request permission. Returns `true` if authorized, `false` if the user denied. Throws `AlarmKitError` if the OS rejects the request (e.g. missing `NSAlarmKitUsageDescription`). Use `useAuthorizationState` hook to reactively observe the result.
 
-#### `AlarmKit.scheduleTimer(id: string, config: SimpleTimerConfig): Promise<void>`
+#### `AlarmKit.scheduleTimer(id: string, config: SimpleTimerConfig): Promise<Alarm | null>`
 
 Schedule a countdown timer. `id` must be a valid UUID.
 
-#### `AlarmKit.scheduleAlarm(id: string, config: SimpleAlarmConfig): Promise<void>`
+#### `AlarmKit.scheduleAlarm(id: string, config: SimpleAlarmConfig): Promise<Alarm | null>`
 
 Schedule a recurring alarm. `id` must be a valid UUID.
 
@@ -455,10 +500,10 @@ interface SimpleTimerConfig {
 interface SimpleAlarmConfig {
   hour: number // 0-23
   minute: number // 0-59
-  weekdays?: Weekday[] // omit for daily
+  weekdays?: Weekday[] // omit for a non-repeating alarm
   title: string
   snoozeEnabled?: boolean
-  snoozeDuration?: number // seconds, default 540
+  snoozeDuration?: number // seconds; omitted duration maps to 0 in the Simple API
   tintColor?: string
   sound?: string
   trackActions?: boolean
@@ -514,7 +559,7 @@ try {
 | Code                    | Description                                    |
 | ----------------------- | ---------------------------------------------- |
 | `INVALID_UUID`          | The alarm ID is not a valid UUID               |
-| `INVALID_JSON`          | Configuration JSON is malformed                |
+| `INVALID_JSON`          | Public constant; decoding reports `INVALID_CONFIGURATION` |
 | `INVALID_CONFIGURATION` | Configuration validation failed                |
 | `ALARM_NOT_FOUND`       | Alarm doesn't exist (stop/pause/resume)        |
 | `MAXIMUM_LIMIT_REACHED` | iOS alarm limit reached                        |

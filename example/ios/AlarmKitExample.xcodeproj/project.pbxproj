@@ -10,10 +10,37 @@
 		06CA93CB6CA15FAB716C7A6C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		0C80B921A6F3F58F76C31292 /* libPods-AlarmKitExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-AlarmKitExample.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		6BED33CE4E19258C4215041A /* libPods-AlarmKitCountdown.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD7AD684F7CAC7F4E52B0636 /* libPods-AlarmKitCountdown.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		A10000000000000000000001 /* AlarmKitCountdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* AlarmKitCountdown.swift */; };
+		A10000000000000000000003 /* AlarmKitCountdown.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* AlarmKitCountdown.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F35CDA6CE9AF43F1B933D8DE /* Ogg-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 25674283FF7D44CF9EBF37D1 /* Ogg-Bold.otf */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000005 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000006;
+			remoteInfo = AlarmKitCountdown;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10000000000000000000007 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000003 /* AlarmKitCountdown.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* AlarmKitExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlarmKitExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -26,6 +53,12 @@
 		5DCACB8F33CDC322A6C60F78 /* libPods-AlarmKitExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AlarmKitExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = AlarmKitExample/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AlarmKitExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8F4A5BFD802482D85131C689 /* Pods-AlarmKitCountdown.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AlarmKitCountdown.release.xcconfig"; path = "Target Support Files/Pods-AlarmKitCountdown/Pods-AlarmKitCountdown.release.xcconfig"; sourceTree = "<group>"; };
+		A10000000000000000000002 /* AlarmKitCountdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitCountdown.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* AlarmKitCountdown.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AlarmKitCountdown.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0535A13DFCF482AF356799 /* Pods-AlarmKitCountdown.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AlarmKitCountdown.debug.xcconfig"; path = "Target Support Files/Pods-AlarmKitCountdown/Pods-AlarmKitCountdown.debug.xcconfig"; sourceTree = "<group>"; };
+		DD7AD684F7CAC7F4E52B0636 /* libPods-AlarmKitCountdown.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AlarmKitCountdown.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -35,6 +68,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-AlarmKitExample.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5352EB7E01C93E6B19458789 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6BED33CE4E19258C4215041A /* libPods-AlarmKitCountdown.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,6 +99,7 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-AlarmKitExample.a */,
+				DD7AD684F7CAC7F4E52B0636 /* libPods-AlarmKitCountdown.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -73,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* AlarmKitExample */,
+				A10000000000000000000009 /* AlarmKitCountdown */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -88,8 +131,18 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* AlarmKitExample.app */,
+				A10000000000000000000004 /* AlarmKitCountdown.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000009 /* AlarmKitCountdown */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000002 /* AlarmKitCountdown.swift */,
+				A10000000000000000000008 /* Info.plist */,
+			);
+			path = AlarmKitCountdown;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -97,6 +150,8 @@
 			children = (
 				3B4392A12AC88292D35C810B /* Pods-AlarmKitExample.debug.xcconfig */,
 				5709B34CF0A7D63546082F79 /* Pods-AlarmKitExample.release.xcconfig */,
+				AA0535A13DFCF482AF356799 /* Pods-AlarmKitCountdown.debug.xcconfig */,
+				8F4A5BFD802482D85131C689 /* Pods-AlarmKitCountdown.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -121,6 +176,7 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
+				A10000000000000000000007 /* Embed App Extensions */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
@@ -128,11 +184,29 @@
 			buildRules = (
 			);
 			dependencies = (
+				A1000000000000000000000C /* PBXTargetDependency */,
 			);
 			name = AlarmKitExample;
 			productName = AlarmKitExample;
 			productReference = 13B07F961A680F5B00A75B9A /* AlarmKitExample.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000006 /* AlarmKitCountdown */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1000000000000000000000A /* Build configuration list for PBXNativeTarget "AlarmKitCountdown" */;
+			buildPhases = (
+				3CCFB4B5C31AB313A7AFEFB9 /* [CP] Check Pods Manifest.lock */,
+				A1000000000000000000000B /* Sources */,
+				5352EB7E01C93E6B19458789 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AlarmKitCountdown;
+			productName = AlarmKitCountdown;
+			productReference = A10000000000000000000004 /* AlarmKitCountdown.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -161,6 +235,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* AlarmKitExample */,
+				A10000000000000000000006 /* AlarmKitCountdown */,
 			);
 		};
 /* End PBXProject section */
@@ -213,6 +288,28 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AlarmKitExample/Pods-AlarmKitExample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		3CCFB4B5C31AB313A7AFEFB9 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-AlarmKitCountdown-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -263,7 +360,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1000000000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* AlarmKitCountdown.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1000000000000000000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000006 /* AlarmKitCountdown */;
+			targetProxy = A10000000000000000000005 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -468,6 +581,46 @@
 			};
 			name = Release;
 		};
+		A1000000000000000000000D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA0535A13DFCF482AF356799 /* Pods-AlarmKitCountdown.debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AlarmKitCountdown/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.AlarmKitExample.countdown;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1000000000000000000000E /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8F4A5BFD802482D85131C689 /* Pods-AlarmKitCountdown.release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AlarmKitCountdown/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.AlarmKitExample.countdown;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -485,6 +638,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1000000000000000000000A /* Build configuration list for PBXNativeTarget "AlarmKitCountdown" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000000000000000000000D /* Debug */,
+				A1000000000000000000000E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

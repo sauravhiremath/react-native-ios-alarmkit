@@ -16,7 +16,6 @@ include(${CMAKE_SOURCE_DIR}/../nitrogen/generated/android/NitroAlarmkit+autolink
 # Set up local includes
 include_directories(
         "src/main/cpp"
-        "../cpp"
 )
 
 find_library(LOG_LIB log)

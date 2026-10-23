@@ -1,45 +1,42 @@
-## Step 1: Start Metro
+# AlarmKit example
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+This app uses React Native 0.83 and the local library source.
+It includes the `AlarmKitCountdown` widget extension and uses the bare React Native setup.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Setup
 
-```sh
-bun run start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+From the repository root:
 
 ```sh
-bun run android
+bun install --frozen-lockfile
+bun run specs
 ```
 
-### iOS
+From `example/ios`, run `pod install` with a Ruby installation that provides CocoaPods.
+The Podfile links the bundled Swift core into the app and widget.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+From `example`, start Metro with `bun run start`.
+Open `ios/AlarmKitExample.xcworkspace`, select the application scheme, and run it on your device.
+Set your development team for both targets before a device build.
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## Action checks
 
-```sh
-bundle install
-```
+1. Grant alarm permission.
+2. Schedule the five-second timer, then press its system Stop button.
+3. Schedule the ten-second alarm, then press its system Snooze button.
+4. Return to the app and refresh the action list.
+5. Refresh again. Existing events must retain their IDs.
+6. Press **Acknowledge first**. Only the first event must disappear.
 
-Then, and every time you update your native dependencies, run:
+Use physical devices to check background, terminated, and locked states.
+The app reads events when it returns to the foreground. It does not receive immediate background JavaScript callbacks.
 
-```sh
-bundle exec pod install
-```
+## Local checks
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Run test commands from the repository root.
+See [Testing](../CONTRIBUTING.md#testing) for JavaScript, hook, Swift, and packed consumer checks.
 
-```sh
-bun run ios
-```
+## Android
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+With an Android SDK configured, run `bun run android` from `example`.
+AlarmKit remains unsupported. The public methods retain their no-op results.

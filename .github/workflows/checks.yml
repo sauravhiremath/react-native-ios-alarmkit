@@ -1,0 +1,95 @@
+name: Package and native checks
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        type: string
+        default: Release
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - run: bun install --frozen-lockfile
+      - run: bun run lint-ci
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run test:hooks
+      - run: npm pack --dry-run --json
+
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: xcodebuild -version
+      - run: npm run test:swift
+
+  consumers:
+    runs-on: macos-latest
+    env:
+      RCT_USE_RN_DEP: '1'
+      RCT_USE_PREBUILT_RNCORE: '1'
+    strategy:
+      fail-fast: false
+      matrix:
+        linkage: [library, static, dynamic]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: bun.lock
+      - uses: ruby/setup-ruby@v1.334.0
+        with:
+          ruby-version: '4.0.9'
+      - run: gem install cocoapods --version 1.17.0 --no-document
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-bare-${{ hashFiles('bun.lock', 'example/ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-bare-
+      - run: bun install --frozen-lockfile
+      - run: xcodebuild -version
+      - name: Build packed consumer and check action metadata
+        run: bun run test:ios --linkage "${{ matrix.linkage }}" --configuration "${{ inputs.configuration }}"
+
+  expo:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            bun.lock
+            scripts/verify-expo.cjs
+      - uses: ruby/setup-ruby@v1.334.0
+        with:
+          ruby-version: '4.0.9'
+      - run: gem install cocoapods --version 1.17.0 --no-document
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-expo-${{ hashFiles('bun.lock', 'scripts/verify-expo.cjs') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-expo-
+      - run: bun install --frozen-lockfile
+      - run: bun run test:expo

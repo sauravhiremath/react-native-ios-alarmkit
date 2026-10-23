@@ -1,241 +1,83 @@
-# Live Activity Setup Guide
+# Live Activity setup
 
-This guide walks you through setting up Live Activities for custom alarm countdown UI.
+AlarmKit requires a widget extension when an app provides a countdown presentation.
+Without the extension, iOS can dismiss the countdown and fail to alert.
+Timers and snooze countdowns need this setup.
 
-## Overview
+## Requirements
 
-When you schedule an alarm with countdown functionality, iOS displays a Live Activity on:
+- Build with an SDK that provides AlarmKit. Apple introduced it in Xcode 26.
+- Use an iOS 26 or later device for action checks.
+- Follow the core pod and action registration steps in the repository README.
 
-- Lock Screen
-- Dynamic Island
-- StandBy mode
+The local build checks use Xcode 27. Xcode 26 and physical-device behavior need separate checks.
 
-By default, iOS uses a system-provided countdown UI. To customize this, you need to implement a Widget Extension in Xcode.
+## Add the widget target
 
-## Prerequisites
+1. Open your app's Xcode workspace.
+2. Add a Widget Extension target with Live Activity support.
+3. Set the extension deployment target to iOS 26.
+4. Embed the extension in the application target.
+5. Remove the template widget code.
+6. Copy `example/ios/AlarmKitCountdown/AlarmKitCountdown.swift` into the extension target.
+7. Use `example/ios/AlarmKitCountdown/Info.plist` as the extension property list.
 
-- iOS 26+ device or simulator
-- Xcode 16+
-- Understanding of SwiftUI basics
+The example uses `AlarmAttributes<AlarmKitMetadata>` from `AlarmKitCore`.
+Both the scheduler and widget use the same empty metadata type.
+Do not create a second metadata type in the widget.
 
-## Step 1: Add Widget Extension Target
+## Link the Swift core
 
-1. Open your project in Xcode: `open ios/YourApp.xcodeproj`
+Add the core pod inside the widget target in your Podfile:
 
-2. Click **File** > **New** > **Target**
-
-3. Select **Widget Extension**, click **Next**
-
-4. Configure the extension:
-   - Product Name: `AlarmKitWidget`
-   - Include Live Activity: **Yes** (check the box)
-   - Language: Swift
-   - Project: YourApp
-   - Embed in Application: YourApp
-
-5. Click **Finish**
-
-6. When prompted to activate the scheme, click **Activate**
-
-## Step 2: Configure App Groups
-
-Live Activities need to share data between your app and the widget extension.
-
-1. Select your main app target
-
-2. Go to **Signing & Capabilities**
-
-3. Click **+ Capability** and add **App Groups**
-
-4. Click **+** to add a new app group: `group.com.yourcompany.yourapp.alarmkit`
-
-5. Repeat for the **AlarmKitWidget** target
-
-## Step 3: Implement Live Activity
-
-Replace the content of `ios/AlarmKitWidget/AlarmKitWidgetLiveActivity.swift`:
-
-```swift
-import ActivityKit
-import WidgetKit
-import SwiftUI
-import AlarmKit
-
-struct AlarmLiveActivity: Widget {
-  var body: some WidgetConfiguration {
-    ActivityConfiguration(for: AlarmAttributes<EmptyMetadata>.self) { context in
-      lockScreenView(context)
-    } dynamicIsland: { context in
-      DynamicIsland {
-        DynamicIslandExpandedRegion(.leading) {
-          Image(systemName: "alarm")
-            .foregroundColor(context.attributes.tintColor)
-        }
-
-        DynamicIslandExpandedRegion(.trailing) {
-          Text(context.state.mode == .countdown ? "Countdown" : "Paused")
-            .font(.caption)
-        }
-
-        DynamicIslandExpandedRegion(.center) {
-          countdownText(context)
-        }
-
-        DynamicIslandExpandedRegion(.bottom) {
-          if context.state.mode == .countdown {
-            Text("Tap to pause")
-              .font(.caption2)
-              .foregroundColor(.secondary)
-          }
-        }
-      } compactLeading: {
-        Image(systemName: "alarm")
-          .foregroundColor(context.attributes.tintColor)
-      } compactTrailing: {
-        Text(timeRemaining(context))
-          .font(.caption2)
-          .monospacedDigit()
-      } minimal: {
-        Image(systemName: "alarm")
-          .foregroundColor(context.attributes.tintColor)
-      }
-    }
-  }
-
-  @ViewBuilder
-  func lockScreenView(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> some View {
-    VStack(spacing: 12) {
-      HStack {
-        Image(systemName: "alarm")
-          .foregroundColor(context.attributes.tintColor)
-
-        Text(context.attributes.presentation.alert.title)
-          .font(.headline)
-          .foregroundColor(context.attributes.tintColor)
-      }
-
-      countdownText(context)
-        .font(.title)
-        .monospacedDigit()
-        .foregroundColor(context.attributes.tintColor)
-
-      if context.state.mode == .paused {
-        Text("Paused")
-          .font(.caption)
-          .foregroundColor(.secondary)
-      }
-    }
-    .padding()
-  }
-
-  @ViewBuilder
-  func countdownText(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> some View {
-    if let date = context.state.date {
-      Text(timerInterval: date...Date.now, countsDown: false)
-        .multilineTextAlignment(.center)
-    } else {
-      Text("--:--")
-    }
-  }
-
-  func timeRemaining(_ context: ActivityViewContext<AlarmAttributes<EmptyMetadata>>) -> String {
-    guard let date = context.state.date else { return "--:--" }
-    let interval = date.timeIntervalSince(Date.now)
-    let minutes = Int(interval) / 60
-    let seconds = Int(interval) % 60
-    return String(format: "%02d:%02d", minutes, seconds)
-  }
-}
-
-struct EmptyMetadata: AlarmMetadata {}
+```ruby
+target 'YourAlarmWidget' do
+  pod 'AlarmKitCore', :path => File.dirname(
+    Pod::Executable.execute_command('node', ['-p', "require.resolve('react-native-ios-alarmkit/package.json')"]).strip
+  )
+end
 ```
 
-## Step 4: Update Info.plist
+Run `pod install` from the iOS directory.
+The widget imports `AlarmKitCore`. It does not need Nitro or React Native.
+Use the same CocoaPods linkage for the app and widget targets.
 
-Add the following to `ios/AlarmKitWidget/Info.plist`:
+## Configure the app
+
+Add these keys to the application target's property list:
 
 ```xml
+<key>NSAlarmKitUsageDescription</key>
+<string>Schedule alarms you create in this app.</string>
 <key>NSSupportsLiveActivities</key>
 <true/>
-<key>NSSupportsLiveActivitiesFrequentUpdates</key>
-<true/>
 ```
 
-## Step 5: Build and Test
+The widget property list declares `com.apple.widgetkit-extension` as its extension point.
+This implementation does not need App Groups or frequent-update permission.
+AlarmKit provides the presentation data. The widget does not read the action event file.
 
-1. Select the **AlarmKitWidget** scheme in Xcode
+## Metadata limits
 
-2. Run on a device or simulator (iOS 26+)
+JavaScript still accepts the `metadata` field.
+The native scheduler uses empty `AlarmKitMetadata` and does not send custom fields to the widget.
+Changing the JavaScript field alone does not add native metadata support.
 
-3. In your React Native app, schedule an alarm with countdown functionality
+## Check the app
 
-4. The countdown should appear with your custom UI on the Lock Screen and in the Dynamic Island
+1. Build and run the application scheme, not only the widget scheme.
+2. Grant alarm permission.
+3. Schedule the example's five-second timer and press Stop.
+4. Schedule the ten-second alarm and press Snooze.
+5. Check the countdown on the Lock Screen and Dynamic Island.
+6. Return to the app and read the saved actions.
+7. Use **Acknowledge first** to remove one event.
 
-## Customization
+Repeat the action checks with the app in the background, terminated, and locked.
+A successful simulator build does not prove that iOS executes the handlers on a device.
+Some system dismissal paths do not run an intent.
 
-### Using Custom Metadata
+## References
 
-You can pass custom data to your Live Activity:
-
-**TypeScript:**
-
-```typescript
-const id = crypto.randomUUID()
-await AlarmKitManager.shared.schedule(id, {
-  countdownDuration: {
-    preAlert: 600,
-    postAlert: 300,
-  },
-  presentation: { ... },
-  metadata: {
-    iconName: 'flame',
-    recipeName: 'Pizza',
-  },
-})
-```
-
-**Swift:**
-
-```swift
-struct CookingMetadata: AlarmMetadata {
-  let iconName: String
-  let recipeName: String
-}
-
-struct AlarmLiveActivity: Widget {
-  var body: some WidgetConfiguration {
-    ActivityConfiguration(for: AlarmAttributes<CookingMetadata>.self) { context in
-      VStack {
-        Image(systemName: context.attributes.metadata?.iconName ?? "alarm")
-        Text(context.attributes.metadata?.recipeName ?? "Alarm")
-      }
-    } dynamicIsland: {  }
-  }
-}
-```
-
-### Styling Tips
-
-- Use `context.attributes.tintColor` for consistent branding
-- Keep text concise for the Dynamic Island
-- Test on different iPhone models (different Dynamic Island sizes)
-- Use SF Symbols for icons
-
-## Troubleshooting
-
-### Live Activity doesn't appear
-
-- Ensure iOS 26+ is running
-- Check that App Groups are configured correctly
-- Verify Widget Extension is embedded in the app
-- Check Xcode console for error messages
-
-### Device reboots
-
-After a device restart, Live Activities cannot be shown until the device is unlocked. The system will use the default countdown presentation configured in your `AlarmConfiguration`.
-
-## Additional Resources
-
-- [AlarmKit Documentation](https://developer.apple.com/documentation/alarmkit)
-- [ActivityKit Documentation](https://developer.apple.com/documentation/activitykit)
-- [Human Interface Guidelines: Live Activities](https://developer.apple.com/design/human-interface-guidelines/live-activities)
+- [Apple AlarmKit scheduling and widget requirements](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit)
+- [Apple App Intents package registration](https://sosumi.ai/documentation/appintents/appintentspackage)

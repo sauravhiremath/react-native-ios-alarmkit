@@ -35,8 +35,8 @@
 	</dict>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>AlarmKit Example uses alarms to demonstrate timer and scheduled alarm features.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

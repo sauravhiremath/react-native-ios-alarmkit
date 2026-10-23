@@ -1,4 +1,5 @@
 PODS:
+  - AlarmKitCore (0.8.0)
   - boost (1.84.0)
   - DoubleConversion (1.1.6)
   - fast_float (8.0.0)
@@ -8,7 +9,8 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - NitroAlarmkit (0.7.6):
+  - NitroAlarmkit (0.8.0):
+    - AlarmKitCore (= 0.8.0)
     - boost
     - DoubleConversion
     - fast_float
@@ -2599,6 +2601,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - AlarmKitCore (from `../..`)
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
@@ -2687,6 +2690,8 @@ SPEC REPOS:
     - SocketRocket
 
 EXTERNAL SOURCES:
+  AlarmKitCore:
+    :path: "../.."
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
   DoubleConversion:
@@ -2850,6 +2855,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  AlarmKitCore: 0e9de533536060acb6d3cc457974573f5f4a52e6
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
@@ -2857,7 +2863,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: ea6f66099727135844b8248b07a396de3f40fe52
-  NitroAlarmkit: 8bd338abe12918735fe9e3d33204b83fbba64b6e
+  NitroAlarmkit: 7029e95bff7f989f2f989e21a492939dc3950448
   NitroModules: 1ef0796714251dbdaea49af187e291d8b6a7c5ea
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 2b70c6e3abe00396cefd8913efbf6a2db01a2b36
@@ -2932,6 +2938,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 6ca93c8c13f56baeec55eb608577619b17a4d64e
 
-PODFILE CHECKSUM: a51ea9c28ec708c6b3ef16d7b50a0e7cc4e84de7
+PODFILE CHECKSUM: 7b96a82de07d177f4759f2d1d26688a9a5959ea6
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.17.0

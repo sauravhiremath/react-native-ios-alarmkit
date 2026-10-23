@@ -5,38 +5,37 @@ import type {
   CountdownDuration,
 } from './types'
 
-export interface TimerOptions {
+interface ConfigurationOptions {
+  attributes: {
+    presentation: AlarmPresentation
+    metadata?: Record<string, string>
+    tintColor?: string
+  }
+  sound?: string
+  trackActions?: boolean
+}
+
+export interface TimerOptions extends ConfigurationOptions {
   duration: number
-  attributes: {
-    presentation: AlarmPresentation
-    metadata?: Record<string, string>
-    tintColor?: string
-  }
-  sound?: string
-  trackActions?: boolean
 }
 
-export interface AlarmOptions {
+export interface AlarmOptions extends ConfigurationOptions {
   schedule: AlarmSchedule
-  attributes: {
-    presentation: AlarmPresentation
-    metadata?: Record<string, string>
-    tintColor?: string
-  }
-  sound?: string
-  trackActions?: boolean
 }
 
-export interface FullOptions {
+export interface FullOptions extends ConfigurationOptions {
   countdownDuration: CountdownDuration
   schedule?: AlarmSchedule
-  attributes: {
-    presentation: AlarmPresentation
-    metadata?: Record<string, string>
-    tintColor?: string
+}
+
+function mapOptions(options: ConfigurationOptions) {
+  return {
+    presentation: options.attributes.presentation,
+    metadata: options.attributes.metadata,
+    tintColor: options.attributes.tintColor,
+    soundName: options.sound,
+    trackActions: options.trackActions,
   }
-  sound?: string
-  trackActions?: boolean
 }
 
 export const AlarmConfigurationFactory = {
@@ -46,11 +45,7 @@ export const AlarmConfigurationFactory = {
         preAlert: options.duration,
         postAlert: 0,
       },
-      presentation: options.attributes.presentation,
-      metadata: options.attributes.metadata,
-      tintColor: options.attributes.tintColor,
-      soundName: options.sound,
-      trackActions: options.trackActions,
+      ...mapOptions(options),
     }
   },
 
@@ -61,11 +56,7 @@ export const AlarmConfigurationFactory = {
         postAlert: 540,
       },
       schedule: options.schedule,
-      presentation: options.attributes.presentation,
-      metadata: options.attributes.metadata,
-      tintColor: options.attributes.tintColor,
-      soundName: options.sound,
-      trackActions: options.trackActions,
+      ...mapOptions(options),
     }
   },
 
@@ -73,11 +64,7 @@ export const AlarmConfigurationFactory = {
     return {
       countdownDuration: options.countdownDuration,
       schedule: options.schedule,
-      presentation: options.attributes.presentation,
-      metadata: options.attributes.metadata,
-      tintColor: options.attributes.tintColor,
-      soundName: options.sound,
-      trackActions: options.trackActions,
+      ...mapOptions(options),
     }
   },
 }

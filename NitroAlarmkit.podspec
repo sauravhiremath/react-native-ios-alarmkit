@@ -14,12 +14,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/sauravhiremath/react-native-ios-alarmkit.git", :tag => "#{s.version}" }
 
   s.source_files = [
-    # Implementation (Swift)
-    "ios/**/*.{swift}",
-    # Autolinking/Registration (Objective-C++)
-    "ios/**/*.{m,mm}",
-    # Implementation (C++ objects)
-    "cpp/**/*.{hpp,cpp}",
+    "ios/HybridAlarmKit.swift",
   ]
 
   load 'nitrogen/generated/ios/NitroAlarmkit+autolinking.rb'
@@ -27,5 +22,6 @@ Pod::Spec.new do |s|
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
+  s.dependency 'AlarmKitCore', s.version.to_s
   install_modules_dependencies(s)
 end

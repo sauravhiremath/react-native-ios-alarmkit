@@ -165,3 +165,90 @@ test('all configuration factories pass the action tracking option', () => {
     undefined
   )
 })
+
+test('factories preserve fields, defaults, and detached method calls', () => {
+  const { AlarmConfigurationFactory: factory } = loadModule('src/AlarmConfiguration.ts', {})
+  const attributes = {
+    presentation: { alert: { title: 'Wake up' }, countdown: { title: 'Remaining' } },
+    tintColor: '#123456',
+    metadata: { key: 'value' },
+  }
+  const options = { attributes, sound: 'sound.caf', trackActions: false }
+  const mapped = {
+    presentation: attributes.presentation,
+    tintColor: attributes.tintColor,
+    metadata: attributes.metadata,
+    soundName: 'sound.caf',
+    trackActions: false,
+  }
+  const { timer, alarm, create } = factory
+  assert.deepEqual(timer({ ...options, duration: 41 }), {
+    ...mapped, countdownDuration: { preAlert: 41, postAlert: 0 },
+  })
+  for (const schedule of [
+    { type: 'fixed', date: 1792660000000 },
+    { type: 'relative', hour: 7, minute: 10, weekdays: ['monday', 'friday'] },
+  ]) {
+    assert.deepEqual(alarm({ ...options, schedule }), {
+      ...mapped, countdownDuration: { preAlert: 0, postAlert: 540 }, schedule,
+    })
+    assert.deepEqual(create({ ...options, countdownDuration: { preAlert: 12, postAlert: 34 }, schedule }), {
+      ...mapped, countdownDuration: { preAlert: 12, postAlert: 34 }, schedule,
+    })
+  }
+  assert.equal(timer({ duration: 1, attributes }).soundName, undefined)
+  assert.equal(timer({ duration: 1, attributes }).trackActions, undefined)
+})
+
+test('simple APIs keep their different snooze defaults and field mapping', async () => {
+  const calls = []
+  const api = createAPI({
+    cancel: async (id) => { calls.push(['cancel', id]); return false },
+    schedule: async (id, json) => { calls.push(['schedule', id, JSON.parse(json)]); return '' },
+  })
+  for (const snoozeEnabled of [undefined, false, true]) {
+    for (const snoozeDuration of [undefined, 0, 90]) {
+      const common = { title: 'Test', snoozeEnabled, snoozeDuration, tintColor: '#123456', sound: 'a.caf', trackActions: false }
+      await api.AlarmKit.scheduleTimer('timer', { ...common, duration: 20 })
+      await api.AlarmKit.scheduleAlarm('alarm', { ...common, hour: 8, minute: 12, weekdays: ['monday'] })
+      const timer = calls[calls.length - 3][2]
+      const alarm = calls[calls.length - 1][2]
+      assert.deepEqual(timer.countdownDuration, { preAlert: 20, postAlert: snoozeDuration || 300 })
+      assert.deepEqual(alarm.countdownDuration, { preAlert: 0, postAlert: snoozeEnabled ? snoozeDuration || 0 : 0 })
+      assert.deepEqual(alarm.schedule, { type: 'relative', hour: 8, minute: 12, weekdays: ['monday'] })
+      assert.deepEqual(timer.presentation.countdown, { title: 'Time Remaining' })
+      assert.equal(alarm.presentation.countdown, undefined)
+      for (const config of [timer, alarm]) {
+        assert.equal(config.trackActions, false)
+        assert.equal(config.tintColor, common.tintColor)
+        assert.equal(config.soundName, common.sound)
+        assert.deepEqual(config.presentation.alert.stopButton, { text: 'Stop', textColor: '#FFFFFF', systemImageName: 'stop.circle' })
+        assert.equal(config.presentation.alert.secondaryButtonBehavior, snoozeEnabled ? 'countdown' : undefined)
+        assert.equal(config.presentation.alert.secondaryButton?.text, snoozeEnabled ? 'Snooze' : undefined)
+      }
+    }
+  }
+  assert.deepEqual(calls.slice(0, 2).map((call) => call[0]), ['cancel', 'schedule'])
+})
+
+test('structured errors retain code and native details through both APIs', async () => {
+  const info = { code: 'INVALID_CONFIGURATION', message: 'Rejected\nconfiguration', domain: 'NativeDomain', nativeCode: 42 }
+  const api = createAPI({ schedule: async () => { throw new Error(JSON.stringify(info)) } })
+  await assert.rejects(api.manager.schedule('id', {}), (error) => {
+    assert.equal(error.code, info.code)
+    assert.equal(error.message, info.message)
+    assert.equal(error.domain, info.domain)
+    assert.equal(error.nativeCode, info.nativeCode)
+    assert.equal(api.AlarmKitError.fromError(error), error)
+    return true
+  })
+})
+
+test('malformed structured error data uses the UNKNOWN fallback', () => {
+  const { AlarmKitError } = loadModule('src/types.ts', {})
+  for (const input of ['broken {json}', '{}', '{"code":"INVALID_UUID"}', '{"code":12,"message":false}', '{"code":"OTHER","message":"text"}']) {
+    const error = AlarmKitError.fromError(input)
+    assert.equal(error.code, 'UNKNOWN')
+    assert.equal(error.message, input)
+  }
+})

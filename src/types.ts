@@ -57,10 +57,20 @@ export class AlarmKitError extends Error {
     const errorString = String(error)
 
     try {
-      const jsonMatch = errorString.match(/\{.*\}/)
+      const jsonMatch = errorString.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const errorInfo = JSON.parse(jsonMatch[0]) as AlarmKitErrorInfo
-        return new AlarmKitError(errorInfo, errorString)
+        if (
+          errorInfo &&
+          Object.values(AlarmKitErrorCode).includes(errorInfo.code) &&
+          typeof errorInfo.message === 'string' &&
+          (errorInfo.domain === undefined ||
+            typeof errorInfo.domain === 'string') &&
+          (errorInfo.nativeCode === undefined ||
+            typeof errorInfo.nativeCode === 'number')
+        ) {
+          return new AlarmKitError(errorInfo, errorString)
+        }
       }
     } catch {
       // Failed to parse, fall through to default
