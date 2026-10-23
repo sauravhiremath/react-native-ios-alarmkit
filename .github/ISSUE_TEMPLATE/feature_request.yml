@@ -1,0 +1,59 @@
+name: Feature request
+description: Suggest a new feature or a change to existing behavior.
+title: 'feat: '
+body:
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched open and closed issues for this request.
+          required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: Describe what the package does now and what is missing. Include the package version.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why it is needed
+      description: Describe the user problem and who would benefit from this change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed change
+      description: Describe the expected behavior. Add an API example if useful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: possible-implementation
+    attributes:
+      label: Possible implementation
+      description: If known, describe how this could work and any alternatives you considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: platform-limits
+    attributes:
+      label: Platform limits
+      description: If relevant, describe iOS version, app state, or system limits. Separate confirmed behavior from assumptions.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link related issues, Apple documentation, or examples. Do not include private data.
+    validations:
+      required: false
