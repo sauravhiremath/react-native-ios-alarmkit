@@ -160,7 +160,7 @@ authSub.remove()
 
 ### Alarm Action Events
 
-Alarm state updates are snapshots, not proof of a stop or snooze action. To record actions, set `trackActions: true` when you schedule an alarm or timer. This option is also available in `AlarmConfiguration` and all configuration factory options. It is off by default, so existing alarms keep their current behavior. Reschedule an existing alarm to enable tracking.
+Set `trackActions: true` to record stop/dismiss and snooze actions. Tracking is off by default; reschedule existing alarms to enable it. Both APIs and all configuration factories support this option.
 
 ```typescript
 await AlarmKit.scheduleAlarm(alarmId, {
@@ -179,33 +179,23 @@ for (const event of events) {
 await AlarmKit.acknowledgeActionEvents(savedIds)
 ```
 
-You do not need to add App Intents code to your app target. Xcode 26 and later merge the App Intents metadata of a static library or a static framework into the app at build time. Do not `import NitroAlarmkit` in `AppDelegate.swift`: the module requires Swift/C++ interoperability, so a standard React Native app target cannot import it.
+**Setup:** Requires Xcode 26+ and static CocoaPods linkage: the default, or `use_frameworks! :linkage => :static`. Dynamic frameworks are not supported. No app-level App Intents code or Expo config plugin is needed. Do not add `import NitroAlarmkit` to `AppDelegate.swift`.
 
-CocoaPods linkage:
+For `expo-build-properties`, use `ios.useFrameworks: "static"`. Action tracking setup survives `expo prebuild --clean`.
 
-- Static libraries (the default) and static frameworks (`use_frameworks! :linkage => :static`): supported.
-- Dynamic frameworks (`use_frameworks! :linkage => :dynamic`): not supported. The intents stay in the metadata of `NitroAlarmkit.framework`, and the app has no App Intents metadata. Apple requires an app-level [`AppIntentsPackage`](https://sosumi.ai/documentation/appintents/appintentspackage) for intents in a framework, and the app target cannot import this module.
+Replace `saveActionToYourBackend` with your storage or analytics call. Read events at app start and on return to the foreground. Use `event.id` to prevent duplicate processing, and acknowledge only saved IDs. Other events remain stored until acknowledged or app data is removed; process them regularly to limit storage use.
 
-> **Expo:** No native file changes are needed, so `expo prebuild --clean` keeps the setup. You do not need a config plugin for action tracking. If you use `expo-build-properties`, `ios.useFrameworks: "static"` is supported and `"dynamic"` is not.
+Each event contains a unique `id`, `alarmId`, `action` (`'stop'` or `'snooze'`), and Unix `timestamp` in milliseconds. `alarmId` preserves your original string; compare it case-insensitively with the uppercase IDs from `getAlarms()`.
 
-To check the setup, build your app and look in `YourApp.app/Metadata.appintents/extract.actionsdata`. The file must contain `AlarmKitStopIntent` and `AlarmKitSnoozeIntent`.
+**Limits:**
 
-`saveActionToYourBackend` is your app's own storage or analytics call. Use `event.id` to prevent duplicate processing. Read events on app start and each time the app returns to the foreground. A read does not remove events. Acknowledge only the IDs you have saved; events that arrive during processing remain in storage. Unacknowledged events remain until you acknowledge them or the app's data is removed. Process them regularly to limit storage use.
+- Stop and dismiss share `'stop'`, including stopped countdowns. An event does not prove that an alarm rang.
+- Snooze requires iOS to run the countdown button's intent. Custom buttons, JavaScript control calls, and alarm state changes do not create action events.
+- Native intents save events without JavaScript. Background or terminated apps get no immediate callback, and some system dismissal paths may not be recorded.
+- Storage is local to the app, not shared with widgets. Before the first unlock after a restart, actions still run but are not recorded. Recording failures go to `os.Logger`, not JavaScript.
+- Files with invalid data or unknown format versions are kept as `action-events.corrupt-<unix-ms>.json`. The library starts an empty event list.
 
-Each event has a unique `id`, the `alarmId`, an `action` (`'stop'` or `'snooze'`), and a Unix `timestamp` in milliseconds (an integer). Native App Intents save these records without JavaScript. The stop and countdown actions remain under AlarmKit's control.
-
-`event.alarmId` is the exact string that you passed when you scheduled the alarm, so `event.alarmId === id` works for your own IDs. `getAlarms()` returns IDs in upper case. When you join events with `getAlarms()`, compare the IDs case-insensitively.
-
-Limits:
-
-- Stop and dismiss share the `'stop'` action. A stop intent can also run when a countdown is stopped; it does not prove that an alarm rang.
-- Snooze is recorded only when iOS runs the secondary intent for a countdown button. A custom secondary button is not tracked. Snooze coverage must be checked on physical devices and each supported iOS version.
-- Records describe intent execution, not inferred state changes. Missing alarms, `stop()`/`cancel()`/`countdown()` calls from JavaScript, and buttons with your own widget intents do not create these records.
-- Background or terminated apps do not get an immediate JavaScript callback. Do not depend on exactly-once delivery or complete coverage of every system dismissal path.
-- Events use local app storage, not a shared widget container. This storage is not available before the first unlock after a device restart (for example, after an overnight iOS update). A stop or snooze before the first unlock is not recorded. The intent does not fail in this case. The library writes the failure to the system log (`os.Logger`); JavaScript does not receive it.
-- If the event file cannot be decoded, or has an unknown format version, the library moves it to `action-events.corrupt-<unix-ms>.json` in the same folder and continues with an empty list. The library does not delete the moved file. Events in that file are not returned.
-
-Before release, test stop/dismiss and snooze on a physical device with the app in the foreground, in the background, and terminated. Repeat with the screen locked and, if used, a paired Apple Watch. Check that snooze still alerts again, that stop still stops, and that saved IDs remain stable until acknowledgement. These device checks are not covered by the automated tests.
+Test stop/dismiss, snooze, and saved event IDs on physical devices across supported iOS versions. Cover foreground, background, terminated, and locked states, plus Apple Watch if used.
 
 See [Apple's action intent documentation](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit).
 
