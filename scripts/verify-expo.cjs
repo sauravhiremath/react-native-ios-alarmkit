@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
+const { packConsumer } = require('./pack-consumer.cjs')
 
 const root = path.resolve(__dirname, '..')
 const temp = process.env.RUNNER_TEMP || path.join(os.tmpdir(), 'opencode')
@@ -14,7 +15,7 @@ console.log(`Expo consumer and logs: ${work}`)
 const run = (command, args) => execFileSync(command, args, {
   cwd: consumer, stdio: 'inherit', env: { ...process.env, CI: '1', EXPO_NO_TELEMETRY: '1' },
 })
-const archive = require('./pack-consumer.cjs')(root, work)
+const archive = packConsumer(root, work)
 fs.writeFileSync(path.join(consumer, 'package.json'), JSON.stringify({
   name: 'alarmkit-expo-consumer', version: '1.0.0', private: true, main: 'index.js',
   dependencies: {

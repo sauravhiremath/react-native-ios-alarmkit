@@ -4,22 +4,14 @@ const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { test } = require('node:test')
+const { stagePackage } = require('../scripts/pack-consumer.cjs')
 
 const root = path.resolve(__dirname, '..')
 
 test('a clean archive contains current declarations and native bindings only', () => {
-  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'alarmkit-package-'))
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'alarmkit-package-'))
   try {
-    for (const entry of [
-      'src', 'ios', 'android', 'nitro.json', 'NitroAlarmkit.podspec',
-      'package.json', 'tsconfig.json', 'README.md', 'LICENSE',
-      'react-native.config.js', '.npmignore', 'scripts', 'plugin', 'app.plugin.js',
-    ]) {
-      if (fs.existsSync(path.join(root, entry))) {
-        fs.cpSync(path.join(root, entry), path.join(fixture, entry), { recursive: true })
-      }
-    }
-    fs.symlinkSync(path.join(root, 'node_modules'), path.join(fixture, 'node_modules'), 'dir')
+    const fixture = stagePackage(root, work)
     const run = (...args) => execFileSync('npm', args, { cwd: fixture, encoding: 'utf8' })
     fs.writeFileSync(path.join(fixture, 'src', 'RemovedSource.ts'), 'export const removed = true\n')
     run('run', 'typescript')
@@ -42,6 +34,6 @@ test('a clean archive contains current declarations and native bindings only', (
       fs.unlinkSync(path.join(fixture, output.filename))
     }
   } finally {
-    fs.rmSync(fixture, { recursive: true, force: true })
+    fs.rmSync(work, { recursive: true, force: true })
   }
 })

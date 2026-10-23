@@ -5,7 +5,6 @@
 ## Goal
 
 Support static libraries, static frameworks, and dynamic frameworks without duplicate alarm implementations.
-Make action tracking work with React Native Firebase 27.
 Remove confirmed dead code, duplicate work, and incorrect setup instructions across the repository.
 Keep changes small enough to test and maintain.
 
@@ -21,7 +20,7 @@ Do not publish, commit, or change product code during planning.
 1. **AC1:** All three linkage types build in Debug and Release with the same native action handlers.
 2. **AC2:** Existing static apps need no new app-target registration to retain action tracking.
 3. **AC3:** Dynamic apps register both handlers through Apple's supported `AppIntentsPackage` mechanism.
-4. **AC4:** A consumer app runs Firebase 27 and records stop and snooze actions with dynamic frameworks.
+4. **AC4:** A consumer app records stop and snooze actions with dynamic frameworks without service-specific setup.
 5. **AC5:** Expo registration is repeatable and survives a clean prebuild without duplicate source references or build entries.
 6. **AC6:** JavaScript exports, alarm defaults, event IDs, storage paths, and storage format remain compatible.
 7. **AC7:** Native errors retain their code and native details. Listeners and hooks release resources and reject stale initial results.
@@ -84,7 +83,7 @@ Do not advertise custom metadata delivery that the native implementation does no
 - Android Debug build: blocked because this machine has no configured Android SDK.
 - Xcode reports `27.0`, build `27A266a`. This does not establish Xcode 26 compatibility.
 
-No dynamic consumer, Expo prebuild, Firebase consumer, or physical-device action test ran during planning.
+No dynamic consumer, Expo prebuild, or physical-device action test ran during planning.
 The simulator build used a new output directory, but it did not reinstall Pods from a clean checkout.
 
 ## Decisions
@@ -117,8 +116,8 @@ Also test static linkage with explicit registration. This checks that optional p
 - Use `createRunOncePlugin`, plus checks for existing Xcode references and source membership.
 - Fail with an actionable setup error if a conflicting source file prevents safe changes.
 - Require explicit plugin use for dynamic action tracking. Static users retain their existing setup.
-- Do not set Firebase flags, permissions, signing, App Groups, or linkage from this plugin.
-- Do not add Firebase or Expo as required runtime dependencies of the library.
+- Do not change unrelated dependency settings, permissions, signing, App Groups, or linkage from this plugin.
+- Do not add service SDKs or Expo as required runtime dependencies of the library.
 
 ### Package build
 
@@ -151,7 +150,7 @@ Use readable release versions or ranges. Preserve lockfile integrity records.
 Keep current dependency versions when this work does not require an update.
 State compatibility constraints when the latest stable release cannot be used.
 
-Registry checks during planning returned Firebase `27.0.0`, Expo `58.0.17`, and config plugins `58.0.10`.
+Registry checks during planning returned Expo `58.0.17` and config plugins `58.0.10`.
 These are observations, not permanent version pins.
 Keep new consumer fixtures isolated from the existing React Native `0.83.0` example.
 Match any renderer dependency to the example's React version rather than installing an incompatible renderer.
@@ -161,7 +160,7 @@ Match any renderer dependency to the example's React version rather than install
 - A dynamic-only release or a required migration for existing static consumers.
 - New alarm APIs, automatic backend uploads, immediate background JavaScript callbacks, or broader action coverage.
 - Custom metadata support, shared widget event storage, or a storage format migration.
-- A Firebase dependency in the published library or the default example.
+- Service-specific dependencies, setup, or compatibility tests.
 - A React Native, Android Gradle, or Ruby version migration without a demonstrated requirement.
 - Removing Android support because AlarmKit itself is iOS-only.
 - New service containers, base classes, generic event systems, or a separate intent pod without a proven need.
@@ -240,7 +239,6 @@ Mock tests cannot prove those properties.
 | Disposable example copy, no explicit registration | Static framework | Debug and Release builds; both intent definitions; action tests. |
 | Disposable example copy, explicit registration | Dynamic framework | Debug and Release builds; framework embedding; metadata; action tests. |
 | Static consumer with explicit registration | Static framework | No duplicate definitions or duplicate action execution. |
-| Disposable Firebase consumer | Dynamic framework | Firebase 27 initialization, an actual Firebase service call, stop and snooze persistence. |
 | Disposable Expo consumer | Dynamic framework | Plugin twice; clean prebuild twice; native build; action tests. |
 
 Use the built package archive in consumer tests, not only a source checkout.
@@ -301,7 +299,7 @@ Run the relevant tests after each task.
 
 **Result:** A dynamic consumer exposes both existing action intents. Static discovery remains automatic.
 
-**Files and symbols:** `ios/AlarmActionIntents.swift`, `NitroAlarmkit.podspec`; new `plugin/AlarmKitAppIntents.swift`; new `scripts/verify-ios-linkage.sh`.
+**Files and symbols:** `ios/AlarmActionIntents.swift`, `NitroAlarmkit.podspec`; new `plugin/AlarmKitAppIntents.swift`; new `scripts/verify-ios-linkage.cjs`.
 
 **Contract:** Public `AlarmKitIntentsPackage`; unchanged intent names, parameters, storage, and JavaScript APIs.
 
@@ -321,7 +319,7 @@ Run the relevant tests after each task.
 9. Verify static builds without the app declaration and a static build with explicit registration.
 10. Stop and revise this design if direct package import cannot work without broad dependency patches.
 
-**Verification:** `bash scripts/verify-ios-linkage.sh --linkage library --configuration Release`; repeat with `static` and `dynamic`, then all three in Debug.
+**Verification:** `node scripts/verify-ios-linkage.cjs --linkage library --configuration Release`; repeat with `static` and `dynamic`, then all three in Debug.
 
 **Depends on:** Task 1.
 
@@ -439,7 +437,7 @@ Run the relevant tests after each task.
 
 **Files and symbols:** `example/App.tsx`, `example/ios/AlarmKitExample.xcodeproj/project.pbxproj`, application and extension property lists; new minimal widget extension files; `example/ios/Podfile`; Android build files only for proven unused settings or paths.
 
-**Contract:** Keep the default example free of Firebase and Expo. Do not redesign its screens.
+**Contract:** Keep the default example on bare React Native without service SDKs. Do not redesign its screens.
 
 **TDD:** required for action behavior; not applicable to removal of a verified unused build entry.
 
@@ -466,7 +464,7 @@ Run the relevant tests after each task.
 
 **Result:** CI catches metadata, package, plugin, and compatibility failures before publication.
 
-**Files and symbols:** `.github/workflows/lint.yml`, `.github/workflows/publish.yml`, `scripts/verify-ios-linkage.sh`, package tests, and existing test commands.
+**Files and symbols:** `.github/workflows/lint.yml`, `.github/workflows/publish.yml`, `scripts/verify-ios-linkage.cjs`, package tests, and existing test commands.
 
 **Contract:** Keep GitHub Actions as the npm publication path. Do not change package versions or publish during implementation verification.
 
@@ -479,13 +477,10 @@ Run the relevant tests after each task.
 2. Build a fresh archive and install it in the integration consumers.
 3. Run the three-linkage Release matrix on pull requests.
 4. Run the Debug matrix before release. Inspect metadata in both configurations.
-5. Add a Firebase 27 dynamic consumer profile without adding Firebase to the default example.
-6. Initialize Firebase and make a real service call in its device test.
-7. Test the Expo plugin's clean prebuild and generated app build.
-8. Keep Firebase configuration files and credentials outside the package and logs.
-9. Gate publication on archive checks and automated compatibility checks from the same release commit.
-10. Reuse verification commands instead of copying build logic into multiple workflow steps.
-11. Record manual device results for the release commit. Do not claim CI proves background intent execution.
+5. Test the Expo plugin's clean prebuild and generated app build.
+6. Gate publication on archive checks and automated compatibility checks from the same release commit.
+7. Reuse verification commands instead of copying build logic into multiple workflow steps.
+8. Record manual device results for the release commit. Do not claim CI proves background intent execution.
 
 **Verification:** Run the pull-request workflow and the non-publishing release checks against the same commit; complete the consumer and device matrices.
 
@@ -548,13 +543,13 @@ Update their source lists only for actual new native files and tests.
 Task 2 introduces this verification command. It does not exist in the baseline repository:
 
 ```sh
-bash scripts/verify-ios-linkage.sh --linkage library --configuration Release
-bash scripts/verify-ios-linkage.sh --linkage static --configuration Release
-bash scripts/verify-ios-linkage.sh --linkage dynamic --configuration Release
+node scripts/verify-ios-linkage.cjs --linkage library --configuration Release
+node scripts/verify-ios-linkage.cjs --linkage static --configuration Release
+node scripts/verify-ios-linkage.cjs --linkage dynamic --configuration Release
 ```
 
 Repeat these commands with `--configuration Debug` before release.
-Run the Firebase and Expo consumer scenarios from the test strategy.
+Run the Expo consumer scenarios from the test strategy.
 Run real archive creation and consumer installation, not only dry-run packaging.
 
 ### Acceptance mapping
@@ -589,8 +584,6 @@ Do not call this work complete while required consumer or device checks remain u
 - [Issue 6](https://github.com/sauravhiremath/react-native-ios-alarmkit/issues/6).
 - [Apple AppIntentsPackage documentation](https://sosumi.ai/documentation/appintents/appintentspackage).
 - [Apple AlarmKit scheduling and widget requirements](https://sosumi.ai/documentation/alarmkit/scheduling-an-alarm-with-alarmkit).
-- [React Native Firebase 27 migration](https://github.com/invertase/react-native-firebase/blob/main/docs/migrating-to-v27.mdx).
-- [React Native Firebase SPM requirements](https://github.com/invertase/react-native-firebase/blob/main/docs/ios-spm.mdx).
 - [Expo config-plugin development](https://github.com/expo/expo/blob/main/docs/pages/config-plugins/development-for-libraries.mdx).
 - [Expo config-plugin repeat execution](https://github.com/expo/expo/blob/main/docs/pages/config-plugins/development-and-debugging.mdx).
 - [Nitro generated pod settings](https://github.com/margelo/nitro/blob/main/packages/nitrogen/src/autolinking/ios/createPodspecRubyExtension.ts).

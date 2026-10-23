@@ -227,9 +227,6 @@ await AlarmKit.acknowledgeActionEvents(savedIds)
 Dynamic apps register `AlarmKitIntentsPackage` through the canonical app source. Expo apps use the explicit plugin.
 Do not import `NitroAlarmkit` in `AppDelegate.swift`.
 
-React Native Firebase 27 uses dynamic frameworks with Swift Package Manager. Keep Firebase configuration in the consuming app.
-This library does not add Firebase, change Firebase flags, or select linkage.
-
 Replace `saveActionToYourBackend` with your storage or analytics call. Read events at app start and on return to the foreground. Use `event.id` to prevent duplicate processing, and acknowledge only saved IDs. Other events remain stored until acknowledged or app data is removed; process them regularly to limit storage use.
 
 Each event contains a unique `id`, `alarmId`, `action` (`'stop'` or `'snooze'`), and Unix `timestamp` in milliseconds. `alarmId` preserves your original string; compare it case-insensitively with the uppercase IDs from `getAlarms()`.

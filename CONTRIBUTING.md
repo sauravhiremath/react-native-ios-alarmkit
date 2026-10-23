@@ -62,8 +62,8 @@ Do not edit generated podspecs or Nitrogen output by hand.
 The linkage script installs the packed package in a disposable copy of the example:
 
 ```sh
-bash scripts/verify-ios-linkage.sh --linkage library --configuration Debug
-bash scripts/verify-ios-linkage.sh --linkage dynamic --configuration Debug
+node scripts/verify-ios-linkage.cjs --linkage library --configuration Debug
+node scripts/verify-ios-linkage.cjs --linkage dynamic --configuration Debug
 node scripts/verify-expo.cjs
 ```
 

@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verification limits
 
 - No old-alarm migration layer or upgrade test suite is included. The handler module and native metadata type change with the core split.
-- Device action execution and Firebase service access still require device checks. Build checks do not prove those results.
+- Device action execution still requires device checks. Build checks do not prove those results.
 
 ## [0.8.0] - 2026-10-23
 

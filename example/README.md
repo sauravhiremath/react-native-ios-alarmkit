@@ -1,7 +1,7 @@
 # AlarmKit example
 
 This app uses React Native 0.83 and the local library source.
-It includes the `AlarmKitCountdown` widget extension and does not depend on Firebase or Expo.
+It includes the `AlarmKitCountdown` widget extension and uses the bare React Native setup.
 
 ## Setup
 
@@ -44,25 +44,13 @@ From the repository root:
 ```sh
 bash scripts/test-swift.sh
 node --test tests/*.test.cjs
-bash scripts/verify-ios-linkage.sh --linkage library --configuration Debug
-bash scripts/verify-ios-linkage.sh --linkage dynamic --configuration Debug
+node scripts/verify-ios-linkage.cjs --linkage library --configuration Debug
+node scripts/verify-ios-linkage.cjs --linkage dynamic --configuration Debug
 ```
 
 The linkage script installs a fresh archive in a disposable app.
 It keeps Pods and build output outside this checkout.
 Use `--linkage static` for static frameworks and `--configuration Release` for a Release build.
-
-For an isolated Firebase 27 consumer:
-
-```sh
-bash scripts/verify-ios-linkage.sh --linkage dynamic --configuration Debug --profile firebase
-```
-
-The Firebase profile changes only the disposable app.
-Set `FIREBASE_IOS_CONFIG` to a private `GoogleService-Info.plist` before a device check.
-The configuration must match the example bundle identifier.
-Use **Check Firebase 27** to initialize the JavaScript API and fetch Remote Config, then check Stop and Snooze events.
-A build without configuration does not prove Firebase initialization or service access.
 
 ## Android
 

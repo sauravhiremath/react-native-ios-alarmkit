@@ -30,7 +30,7 @@ Unchecked tasks are not complete. Build checks do not prove device action execut
 ### Passed
 
 - Frozen Bun install, TypeScript check, and ESLint. Browserslist reports old data; no lint annotations remain.
-- All 18 Node tests. Archive checks build twice after removing a source file.
+- All 28 Node tests. Archive checks use the consumer package setup and build twice after removing a source file. Script-level checks cover all linkage, configuration, and registration choices without adding unrelated app code or dependencies.
 - All 14 React hook tests.
 - Strict Swift error, listener-task, tracking, and event-store tests.
 - Full Swift core type checking against the iOS 15.1 simulator deployment target, using Xcode 27.
@@ -38,7 +38,6 @@ Unchecked tasks are not complete. Build checks do not prove device action execut
 - Packed React Native 0.83 consumer: dynamic-framework Debug, with app-target registration.
 - Packed React Native 0.83 consumer: static-framework Release, without app-target registration.
 - These consumers embed the widget. The dynamic consumer embeds the core and Nitro frameworks.
-- Firebase 27.0.0 with Remote Config: dynamic Debug build, native initialization call, action metadata, and Nitro registration class all compile or link successfully.
 - Expo 58.0.17, React Native 0.88.0, React 19.3.0, Nitro 0.37.1: Android-only prebuild writes no iOS directory.
 - The Expo consumer passes two clean iOS prebuilds, two `--no-clean` prebuilds, and a Release build.
 - The Expo build contains both action definitions, the core package reference, and the Nitro registration class.
@@ -49,7 +48,7 @@ Unchecked tasks are not complete. Build checks do not prove device action execut
 
 ### Pending or blocked
 
-- Device Stop, Snooze, locked-state behavior, and a Firebase service call have not run.
+- Device Stop, Snooze, and locked-state behavior have not run.
 - Android build is blocked: no Android SDK is configured.
 - Xcode 26 and older iOS runtime checks have not run.
 - The complete Debug/Release linkage matrix has not run locally. Focused builds passed as listed above.
