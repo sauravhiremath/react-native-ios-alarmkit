@@ -44,11 +44,12 @@ Run the local checks from the repository root:
 ```bash
 bun run typecheck
 bun run lint-ci
-node --test tests/*.test.cjs
-bash scripts/test-swift.sh
+bun run test
+bun run test:hooks
+bun run test:swift
 ```
 
-Run `bun run test --runInBand` from `example` for hook lifecycle checks.
+These commands run the Node tests, React hook tests, and strict Swift tests with an AlarmKit SDK check.
 Use the [example setup](example/README.md) for native builds and device action checks.
 
 `ios/core` contains the Swift-only alarm implementation. It does not import Nitro or React Native.
@@ -59,16 +60,23 @@ Keep alarm defaults, storage, and action handling in the core.
 The JSON suffix keeps React Native's podspec search focused on `NitroAlarmkit.podspec`.
 Do not edit generated podspecs or Nitrogen output by hand.
 
-The linkage script installs the packed package in a disposable copy of the example:
+Run packed consumer checks on macOS with CocoaPods available to the selected Ruby:
 
 ```sh
-node scripts/verify-ios-linkage.cjs --linkage library --configuration Debug
-node scripts/verify-ios-linkage.cjs --linkage dynamic --configuration Debug
-node scripts/verify-expo.cjs
+bun run test:ios --linkage library
+bun run test:ios --linkage static
+bun run test:ios --linkage dynamic
+bun run test:expo
 ```
 
+The iOS checks install a fresh archive in a disposable copy of the example.
+They keep Pods and build output outside this checkout. Builds use Release unless `--configuration Debug` is set.
+Dynamic builds add the app registration source; static builds check automatic discovery without that source.
+
 The pull-request workflow checks Release consumers. The publish workflow checks Debug consumers from the release commit before publication.
-Both use the same reusable workflow. Build checks do not prove device Stop or Snooze execution.
+Both use the same reusable workflow with prebuilt React Native core and dependencies.
+Set `RCT_USE_RN_DEP=1` and `RCT_USE_PREBUILT_RNCORE=1` for local consumer checks to use the same mode.
+The library's native code still compiles from source. Build checks do not prove device Stop or Snooze execution.
 Record device results before a release. No old-alarm migration test suite is maintained for the core split.
 
 The Expo 58 fixture uses its default native setup. Expo can keep React Native bridge pods static while `AlarmKitCore` remains dynamic.

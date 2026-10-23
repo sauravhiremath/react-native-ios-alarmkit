@@ -9,7 +9,6 @@
   "source": "src/index",
   "files": [
     "src",
-    "react-native.config.js",
     "lib",
     "nitrogen",
     "android/build.gradle",
@@ -24,14 +23,17 @@
     "ios/**/*.swift",
     "app.plugin.js",
     "plugin/AlarmKitAppIntents.swift",
-    "scripts/clean.cjs",
-    "scripts/generate-core-podspec.cjs",
     "nitro.json",
     "*.podspec",
     "*.podspec.json",
     "README.md"
   ],
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "test:hooks": "npm --prefix example test -- --runInBand",
+    "test:swift": "bash scripts/test-swift.sh",
+    "test:ios": "node scripts/verify-ios-linkage.cjs",
+    "test:expo": "node scripts/verify-expo.cjs",
     "typecheck": "tsc --noEmit",
     "clean": "node scripts/clean.cjs",
     "lint": "eslint \"**/*.{js,ts,tsx}\" --fix",

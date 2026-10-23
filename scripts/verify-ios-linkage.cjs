@@ -2,29 +2,25 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
+const { parseArgs } = require('node:util')
 const { packConsumer } = require('./pack-consumer.cjs')
 
 const root = path.resolve(__dirname, '..')
-const options = { linkage: 'library', configuration: 'Release', registration: 'auto' }
-for (let index = 2; index < process.argv.length; index += 2) {
-  const key = process.argv[index].replace(/^--/, '')
-  if (!(key in options) || !process.argv[index + 1]) {
-    throw new Error('Use --linkage library|static|dynamic --configuration Debug|Release --registration auto|none|explicit')
-  }
-  options[key] = process.argv[index + 1]
-}
+const { values: options } = parseArgs({ options: {
+  linkage: { type: 'string', default: 'library' },
+  configuration: { type: 'string', default: 'Release' },
+} })
 if (!['library', 'static', 'dynamic'].includes(options.linkage) ||
-    !['Debug', 'Release'].includes(options.configuration) ||
-    !['auto', 'none', 'explicit'].includes(options.registration)) {
-  throw new Error('Invalid linkage, configuration, or registration')
+    !['Debug', 'Release'].includes(options.configuration)) {
+  throw new Error('Invalid linkage or configuration')
 }
 
 const temp = process.env.RUNNER_TEMP || path.join(os.tmpdir(), 'opencode')
 fs.mkdirSync(temp, { recursive: true })
 const work = fs.realpathSync(fs.mkdtempSync(path.join(temp, 'alarmkit-linkage-')))
 const consumer = path.join(work, 'consumer')
-const run = (command, args, cwd = consumer, extra = {}) => execFileSync(command, args, {
-  cwd, stdio: 'inherit', env: { ...process.env, ...extra },
+const run = (command, args, cwd = consumer) => execFileSync(command, args, {
+  cwd, stdio: 'inherit',
 })
 console.log(`Consumer and logs: ${work}`)
 fs.mkdirSync(consumer)
@@ -43,9 +39,7 @@ fs.writeFileSync(path.join(consumer, 'metro.config.js'), `module.exports = requi
 fs.writeFileSync(path.join(consumer, 'babel.config.js'), `module.exports = { presets: ['module:@react-native/babel-preset'] };\n`)
 const podfile = path.join(consumer, 'ios', 'Podfile')
 fs.writeFileSync(podfile, fs.readFileSync(podfile, 'utf8').replace("alarmkit_path = '../..'", `alarmkit_path = ${JSON.stringify(library)}`))
-const explicit = options.registration === 'explicit' ||
-  (options.registration === 'auto' && options.linkage === 'dynamic')
-if (explicit) {
+if (options.linkage === 'dynamic') {
   fs.copyFileSync(path.join(library, 'plugin', 'AlarmKitAppIntents.swift'), path.join(consumer, 'ios', 'AlarmKitExample', 'AlarmKitAppIntents.swift'))
   run('ruby', ['-rxcodeproj', '-e', `
     project = Xcodeproj::Project.open(ARGV[0])
@@ -59,4 +53,4 @@ if (explicit) {
 require('./build-ios-consumer.cjs')({
   work, consumer, linkage: options.linkage, configuration: options.configuration, appName: 'AlarmKitExample',
 })
-console.log(`PASS: ${options.linkage} ${options.configuration}; explicit registration: ${explicit}`)
+console.log(`PASS: ${options.linkage} ${options.configuration}`)

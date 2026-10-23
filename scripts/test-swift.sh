@@ -6,6 +6,13 @@ TEMP="${RUNNER_TEMP:-${TMPDIR:-/tmp}/opencode}"
 mkdir -p "$TEMP"
 OUTPUT="$(mktemp -d "$TEMP/alarmkit-swift-XXXXXX")"
 trap 'rm -rf "$OUTPUT"' EXIT
+SDK="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+cat > "$OUTPUT/AlarmKitProbe.swift" <<'EOF'
+#if !canImport(AlarmKit) || !canImport(AppIntents)
+#error("The iPhone Simulator SDK does not provide AlarmKit and AppIntents")
+#endif
+EOF
+xcrun swiftc -typecheck -sdk "$SDK" -target arm64-apple-ios15.1-simulator "$OUTPUT/AlarmKitProbe.swift"
 swiftc -parse-as-library -strict-concurrency=complete -warnings-as-errors \
   ios/core/AlarmKitError.swift ios/core/AlarmKitListenerTasks.swift \
   ios/core/AlarmActionEventStore.swift ios/core/AlarmActionTracking.swift \
@@ -14,5 +21,5 @@ swiftc -parse-as-library -strict-concurrency=complete -warnings-as-errors \
   tests/swift/AlarmActionEventStoreTests.swift -o "$OUTPUT/tests"
 "$OUTPUT/tests"
 xcrun swiftc -typecheck -strict-concurrency=complete -warnings-as-errors \
-  -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target arm64-apple-ios15.1-simulator \
+  -sdk "$SDK" -target arm64-apple-ios15.1-simulator \
   ios/core/*.swift

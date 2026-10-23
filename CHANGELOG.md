@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move native alarm logic, action handlers, and event storage into the Swift-only `AlarmKitCore` pod. Nitro remains the React Native connection.
 - Add a core pod entry to bare-app setup. Dynamic action tracking uses the canonical app registration source. The Expo plugin adds both entries and ignores commented pod declarations.
-- Use one clean package build before packing or publishing. Remove stale output and unused native paths.
+- Use one clean package build before packing or publishing. Exclude build helpers, stale output, and unused native paths from the package.
 - Preserve structured native errors and reject malformed error data. Release listener tasks and ignore stale hook reads.
 - Add a countdown widget target to the example. Keep the JavaScript API and scheduling defaults unchanged.
 

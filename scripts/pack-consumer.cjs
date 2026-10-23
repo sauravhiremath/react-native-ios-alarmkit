@@ -8,7 +8,7 @@ function stagePackage(root, work) {
   for (const entry of [
     'src', 'ios', 'android', 'nitro.json', 'NitroAlarmkit.podspec',
     'package.json', 'tsconfig.json', 'README.md', 'LICENSE',
-    'react-native.config.js', '.npmignore', 'app.plugin.js', 'plugin',
+    'app.plugin.js', 'plugin',
     'scripts/clean.cjs', 'scripts/generate-core-podspec.cjs',
   ]) {
     const destination = path.join(source, entry)

@@ -119,7 +119,7 @@ test('an absent application target fails before writing source files', async (t)
   assert.equal(fs.existsSync(path.join(directory, 'AlarmKitExample/AlarmKitAppIntents.swift')), false)
 })
 
-test('loading the plugin or running Android mods does not write iOS files', (t) => {
+test('loading the plugin does not write iOS files', (t) => {
   const { directory, plugin } = fixture(t)
   plugin({ name: 'AlarmKitExample', slug: 'alarmkit' })
   assert.equal(fs.existsSync(path.join(directory, 'AlarmKitExample')), false)

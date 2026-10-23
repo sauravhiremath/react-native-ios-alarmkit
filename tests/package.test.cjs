@@ -26,11 +26,11 @@ test('a clean archive contains current declarations and native bindings only', (
         'nitrogen/generated/ios/NitroAlarmkit+autolinking.rb',
         'nitrogen/generated/android/NitroAlarmkit+autolinking.cmake',
         'android/src/main/cpp/cpp-adapter.cpp', 'NitroAlarmkit.podspec', 'AlarmKitCore.podspec.json',
-        'app.plugin.js', 'plugin/AlarmKitAppIntents.swift', 'scripts/clean.cjs',
+        'app.plugin.js', 'plugin/AlarmKitAppIntents.swift',
       ]) {
         assert.ok(files.includes(required), `Missing archive file: ${required}`)
       }
-      assert.equal(files.some((file) => /RemovedSource|AlarmKitError\.(js|d\.ts)|tsbuildinfo|^tests\/|ios\/Bridge\.h/.test(file)), false)
+      assert.equal(files.some((file) => /RemovedSource|AlarmKitError\.(js|d\.ts)|tsbuildinfo|^(scripts|tests)\/|ios\/Bridge\.h/.test(file)), false)
       fs.unlinkSync(path.join(fixture, output.filename))
     }
   } finally {

@@ -44,5 +44,4 @@ module.exports = function buildConsumer({ work, consumer, linkage, configuration
   if (!symbols.includes('_OBJC_CLASS_$_NitroAlarmkitAutolinking')) {
     throw new Error('The app does not link the Nitro AlarmKit registration class')
   }
-  return app
 }

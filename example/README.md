@@ -33,24 +33,8 @@ The app reads events when it returns to the foreground. It does not receive imme
 
 ## Local checks
 
-From `example`:
-
-```sh
-bun run test --runInBand
-```
-
-From the repository root:
-
-```sh
-bash scripts/test-swift.sh
-node --test tests/*.test.cjs
-node scripts/verify-ios-linkage.cjs --linkage library --configuration Debug
-node scripts/verify-ios-linkage.cjs --linkage dynamic --configuration Debug
-```
-
-The linkage script installs a fresh archive in a disposable app.
-It keeps Pods and build output outside this checkout.
-Use `--linkage static` for static frameworks and `--configuration Release` for a Release build.
+Run test commands from the repository root.
+See [Testing](../CONTRIBUTING.md#testing) for JavaScript, hook, Swift, and packed consumer checks.
 
 ## Android
 

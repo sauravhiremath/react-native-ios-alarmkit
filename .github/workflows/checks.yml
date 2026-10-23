@@ -22,9 +22,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run lint-ci
       - run: bun run typecheck
-      - run: node --test tests/*.test.cjs
-      - run: bun run test --runInBand
-        working-directory: example
+      - run: bun run test
+      - run: bun run test:hooks
       - run: npm pack --dry-run --json
 
   swift:
@@ -32,18 +31,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: xcodebuild -version
-      - name: Check AlarmKit SDK availability
-        run: |
-          cat > "$RUNNER_TEMP/AlarmKitProbe.swift" <<'EOF'
-          #if !canImport(AlarmKit) || !canImport(AppIntents)
-          #error("The iPhone Simulator SDK does not provide AlarmKit and AppIntents")
-          #endif
-          EOF
-          xcrun swiftc -typecheck -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target arm64-apple-ios15.1-simulator "$RUNNER_TEMP/AlarmKitProbe.swift"
-      - run: bash scripts/test-swift.sh
+      - run: npm run test:swift
 
   consumers:
     runs-on: macos-latest
+    env:
+      RCT_USE_RN_DEP: '1'
+      RCT_USE_PREBUILT_RNCORE: '1'
     strategy:
       fail-fast: false
       matrix:
@@ -61,7 +55,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: xcodebuild -version
       - name: Build packed consumer and check action metadata
-        run: node scripts/verify-ios-linkage.cjs --linkage "${{ matrix.linkage }}" --configuration "${{ inputs.configuration }}"
+        run: bun run test:ios --linkage "${{ matrix.linkage }}" --configuration "${{ inputs.configuration }}"
 
   expo:
     runs-on: macos-latest
@@ -76,4 +70,4 @@ jobs:
           ruby-version: '4.0.9'
       - run: gem install cocoapods --version 1.17.0 --no-document
       - run: bun install --frozen-lockfile
-      - run: node scripts/verify-expo.cjs
+      - run: bun run test:expo
