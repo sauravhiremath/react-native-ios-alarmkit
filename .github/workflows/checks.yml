@@ -48,10 +48,20 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: bun.lock
       - uses: ruby/setup-ruby@v1.334.0
         with:
           ruby-version: '4.0.9'
       - run: gem install cocoapods --version 1.17.0 --no-document
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-bare-${{ hashFiles('bun.lock', 'example/ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-bare-
       - run: bun install --frozen-lockfile
       - run: xcodebuild -version
       - name: Build packed consumer and check action metadata
@@ -65,9 +75,21 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            bun.lock
+            scripts/verify-expo.cjs
       - uses: ruby/setup-ruby@v1.334.0
         with:
           ruby-version: '4.0.9'
       - run: gem install cocoapods --version 1.17.0 --no-document
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-expo-${{ hashFiles('bun.lock', 'scripts/verify-expo.cjs') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pods-expo-
       - run: bun install --frozen-lockfile
       - run: bun run test:expo
