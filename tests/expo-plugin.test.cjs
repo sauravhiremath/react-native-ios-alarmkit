@@ -34,13 +34,49 @@ function fixture(t) {
       modRequest: { platformProjectRoot: directory, projectName: 'AlarmKitExample' },
     })
   }
-  return { directory, project, apply, plugin: module.exports }
+  const applyPodfile = (contents) => {
+    const config = module.exports({ name: 'AlarmKitExample', slug: 'alarmkit' })
+    return config.runPodfileMod({ ...config, modResults: { contents } }).modResults.contents
+  }
+  return { directory, project, apply, applyPodfile, plugin: module.exports }
 }
 
 function registrationReferences(project) {
   return Object.entries(project.pbxFileReferenceSection()).filter(([, value]) =>
     typeof value === 'object' && String(value.path).includes('AlarmKitAppIntents.swift'))
 }
+
+test('commented core pods do not prevent repeatable Podfile setup', (t) => {
+  const { applyPodfile } = fixture(t)
+  const contents = `target 'AlarmKitExample' do
+  # pod 'AlarmKitCore', :path => '../old-path'
+  # pod "AlarmKitCore", :path => '../old-path'
+  use_expo_modules!
+end
+`
+  const result = applyPodfile(contents)
+  assert.equal((result.match(/^[\t ]*pod ['"]AlarmKitCore['"]/gm) || []).length, 1)
+  assert.ok(result.includes("  # pod 'AlarmKitCore', :path => '../old-path'"))
+  assert.ok(result.includes('  # pod "AlarmKitCore", :path => \'../old-path\''))
+  assert.equal(applyPodfile(result), result)
+})
+
+test('existing active core pods are unchanged for either quote style', (t) => {
+  const { applyPodfile } = fixture(t)
+  for (const quote of ["'", '"']) {
+    const contents = `target 'AlarmKitExample' do
+  pod ${quote}AlarmKitCore${quote}, :path => '../library'
+  use_expo_modules!
+end
+`
+    assert.equal(applyPodfile(contents), contents)
+  }
+})
+
+test('an absent Podfile anchor reports how to add the core pod', (t) => {
+  const { applyPodfile } = fixture(t)
+  assert.throws(() => applyPodfile("target 'AlarmKitExample' do\nend\n"), /Cannot find use_expo_modules!.*Add the AlarmKitCore pod/)
+})
 
 test('registration survives two runs and has one application source entry', async (t) => {
   const { directory, project, apply } = fixture(t)

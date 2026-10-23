@@ -38,7 +38,9 @@ function sourcePaths(project, directory) {
 
 function withAlarmKit(config) {
   config = withPodfile(config, (mod) => {
-    if (!/pod\s+['"]AlarmKitCore['"]/.test(mod.modResults.contents)) {
+    if (
+      !/^[ \t]*pod[ \t]+['"]AlarmKitCore['"]/m.test(mod.modResults.contents)
+    ) {
       const anchor = /^(\s*)use_expo_modules!/m
       if (!anchor.test(mod.modResults.contents)) {
         throw new Error(
