@@ -26,29 +26,35 @@ export function useAlarms(): UseAlarmsResult {
       return
     }
 
-    // Subscribe first to avoid race condition where an update
-    // arrives between fetch start and subscription setup
+    let active = true
+    let receivedUpdate = false
     const subscription = AlarmKitManager.shared.addAlarmUpdatesListener(
       (updatedAlarms) => {
+        if (!active) return
+        receivedUpdate = true
         setAlarms(updatedAlarms)
         setError(null)
         setIsLoading(false)
       }
     )
 
-    // Then fetch initial state
     AlarmKitManager.shared
       .getAlarms()
       .then((initialAlarms) => {
+        if (!active || receivedUpdate) return
         setAlarms(initialAlarms)
         setIsLoading(false)
       })
       .catch((err) => {
+        if (!active || receivedUpdate) return
         setError(AlarmKitError.fromError(err))
         setIsLoading(false)
       })
 
-    return () => subscription.remove()
+    return () => {
+      active = false
+      subscription.remove()
+    }
   }, [])
 
   return { alarms, error, isLoading }
@@ -65,28 +71,35 @@ export function useAuthorizationState(): UseAuthorizationResult {
       return
     }
 
-    // Subscribe first to avoid race condition
+    let active = true
+    let receivedUpdate = false
     const subscription = AlarmKitManager.shared.addAuthorizationUpdatesListener(
       (newState) => {
+        if (!active) return
+        receivedUpdate = true
         setState(newState)
         setError(null)
         setIsLoading(false)
       }
     )
 
-    // Then fetch initial state
     AlarmKitManager.shared
       .getAuthorizationState()
       .then((initialState) => {
+        if (!active || receivedUpdate) return
         setState(initialState)
         setIsLoading(false)
       })
       .catch((err) => {
+        if (!active || receivedUpdate) return
         setError(AlarmKitError.fromError(err))
         setIsLoading(false)
       })
 
-    return () => subscription.remove()
+    return () => {
+      active = false
+      subscription.remove()
+    }
   }, [])
 
   return { state, error, isLoading }

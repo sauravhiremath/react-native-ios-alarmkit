@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Move native alarm logic, action handlers, and event storage into the Swift-only `AlarmKitCore` pod. Nitro remains the React Native connection.
+- Add a core pod entry to bare-app setup. Dynamic action tracking uses the canonical app registration source. The Expo plugin adds both entries.
+- Use one clean package build before packing or publishing. Remove stale output and unused native paths.
+- Preserve structured native errors and reject malformed error data. Release listener tasks and ignore stale hook reads.
+- Add a countdown widget target to the example. Keep the JavaScript API and scheduling defaults unchanged.
+
+### Verification limits
+
+- No old-alarm migration layer or upgrade test suite is included. The handler module and native metadata type change with the core split.
+- Device action execution and Firebase service access still require device checks. Build checks do not prove those results.
+
 ## [0.8.0] - 2026-10-23
 
 ### Added

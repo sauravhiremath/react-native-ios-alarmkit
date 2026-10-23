@@ -213,7 +213,7 @@ export default function App(): React.JSX.Element {
   const handleAcknowledgeEvents = useCallback(async (): Promise<void> => {
     setActionEventsBusy(true);
     try {
-      await AlarmKit.acknowledgeActionEvents(actionEvents.map(e => e.id));
+      await AlarmKit.acknowledgeActionEvents(actionEvents.slice(0, 1).map(e => e.id));
       await refreshActionEvents();
     } catch (e) {
       Alert.alert('Action Events Error', String(e));
@@ -255,6 +255,7 @@ export default function App(): React.JSX.Element {
         title: 'Timer Done!',
         snoozeEnabled: false,
         tintColor: '#5B7FA6',
+        trackActions: true,
       });
       showSuccess('timer');
     } catch (e) {
@@ -574,7 +575,7 @@ export default function App(): React.JSX.Element {
               {actionEventsBusy ? (
                 <ActivityIndicator color={COLORS.textOnDark} size="small" />
               ) : (
-                <Text style={styles.alarmActionBtnText}>Acknowledge</Text>
+                <Text style={styles.alarmActionBtnText}>Acknowledge first</Text>
               )}
             </TouchableOpacity>
           </View>

@@ -17,7 +17,8 @@ bun run specs
 ```bash
 bun run typecheck  # Type checking
 bun run lint       # ESLint
-bun run specs      # Regenerate native specs after *.nitro.ts
+bun run specs      # Generate native bindings and the core podspec
+bun run build      # Clean output, compile TypeScript, and generate native files
 ```
 
 ## Making Changes
@@ -38,19 +39,43 @@ bun run specs      # Regenerate native specs after *.nitro.ts
 
 ## Testing
 
-Test on iOS 26+ device/simulator:
+Run the local checks from the repository root:
 
 ```bash
-cd example
-bun install
-cd ios && pod install && cd ..
-bun run ios
+bun run typecheck
+bun run lint-ci
+node --test tests/*.test.cjs
+bash scripts/test-swift.sh
 ```
 
-Test on earlier versions of iOS (< 26):
+Run `bun run test --runInBand` from `example` for hook lifecycle checks.
+Use the [example setup](example/README.md) for native builds and device action checks.
 
-- Build should not fail
-- The api calls should be a no-op, w/o failures
+`ios/core` contains the Swift-only alarm implementation. It does not import Nitro or React Native.
+`ios/HybridAlarmKit.swift` only connects that implementation to Nitro promises and callbacks.
+Keep alarm defaults, storage, and action handling in the core.
+
+`bun run specs` generates `AlarmKitCore.podspec.json` from `package.json`.
+The JSON suffix keeps React Native's podspec search focused on `NitroAlarmkit.podspec`.
+Do not edit generated podspecs or Nitrogen output by hand.
+
+The linkage script installs the packed package in a disposable copy of the example:
+
+```sh
+bash scripts/verify-ios-linkage.sh --linkage library --configuration Debug
+bash scripts/verify-ios-linkage.sh --linkage dynamic --configuration Debug
+node scripts/verify-expo.cjs
+```
+
+The pull-request workflow checks Release consumers. The publish workflow checks Debug consumers from the release commit before publication.
+Both use the same reusable workflow. Build checks do not prove device Stop or Snooze execution.
+Record device results before a release. No old-alarm migration test suite is maintained for the core split.
+
+The Expo 58 fixture uses its default native setup. Expo can keep React Native bridge pods static while `AlarmKitCore` remains dynamic.
+The check verifies the embedded core, app package reference, action definitions, and linked Nitro registration class.
+
+Keep the example's fmt workaround while React Native 0.83 needs it with current Apple Clang.
+Keep the Android prefab fixes until a clean Android build proves they are unnecessary.
 
 ## Pull Requests
 

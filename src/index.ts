@@ -7,6 +7,7 @@ import type {
   SimpleTimerConfig,
   SimpleAlarmConfig,
   AlarmButton,
+  AlertPresentation,
 } from './types'
 
 const createDefaultButton = (
@@ -18,6 +19,19 @@ const createDefaultButton = (
   textColor: color,
   systemImageName: icon,
 })
+
+function createAlert(
+  config: SimpleTimerConfig | SimpleAlarmConfig
+): AlertPresentation {
+  return {
+    title: config.title,
+    stopButton: createDefaultButton('Stop', '#FFFFFF', 'stop.circle'),
+    secondaryButton: config.snoozeEnabled
+      ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
+      : undefined,
+    secondaryButtonBehavior: config.snoozeEnabled ? 'countdown' : undefined,
+  }
+}
 
 export const AlarmKit = {
   get isSupported(): boolean {
@@ -36,25 +50,13 @@ export const AlarmKit = {
     id: string,
     config: SimpleTimerConfig
   ): Promise<Alarm | null> {
-    const stopButton = createDefaultButton('Stop', '#FFFFFF', 'stop.circle')
-    const secondaryButton = config.snoozeEnabled
-      ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
-      : undefined
-
     return AlarmKitManager.shared.scheduleOrReschedule(id, {
       countdownDuration: {
         preAlert: config.duration,
         postAlert: config.snoozeDuration || 300,
       },
       presentation: {
-        alert: {
-          title: config.title,
-          stopButton,
-          secondaryButton,
-          secondaryButtonBehavior: config.snoozeEnabled
-            ? 'countdown'
-            : undefined,
-        },
+        alert: createAlert(config),
         countdown: {
           title: 'Time Remaining',
         },
@@ -69,11 +71,6 @@ export const AlarmKit = {
     id: string,
     config: SimpleAlarmConfig
   ): Promise<Alarm | null> {
-    const stopButton = createDefaultButton('Stop', '#FFFFFF', 'stop.circle')
-    const secondaryButton = config.snoozeEnabled
-      ? createDefaultButton('Snooze', '#FFFFFF', 'zzz')
-      : undefined
-
     return AlarmKitManager.shared.scheduleOrReschedule(id, {
       countdownDuration: {
         preAlert: 0,
@@ -86,14 +83,7 @@ export const AlarmKit = {
         weekdays: config.weekdays,
       },
       presentation: {
-        alert: {
-          title: config.title,
-          stopButton,
-          secondaryButton,
-          secondaryButtonBehavior: config.snoozeEnabled
-            ? 'countdown'
-            : undefined,
-        },
+        alert: createAlert(config),
       },
       tintColor: config.tintColor,
       soundName: config.sound,

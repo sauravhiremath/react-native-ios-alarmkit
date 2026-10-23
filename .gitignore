@@ -61,9 +61,6 @@ android/keystores/debug.keystore
 # Bun
 .bun/
 
-# Expo
-.expo/
-
 # Turborepo
 .turbo/
 
@@ -80,3 +77,4 @@ CLAUDE.md
 
 # Nitrogen
 nitrogen/
+AlarmKitCore.podspec.json

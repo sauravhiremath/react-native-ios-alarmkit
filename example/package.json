@@ -26,6 +26,10 @@
     "@react-native/metro-config": "0.83.0",
     "@react-native/typescript-config": "0.83.0",
     "@types/react": "^19.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/react-test-renderer": "^19.3.0",
+    "jest": "^30.5.2",
+    "react-test-renderer": "19.2.0",
     "react-native-builder-bob": "^0.40.13",
     "react-native-monorepo-config": "^0.1.9",
     "typescript": "^5.8.3"

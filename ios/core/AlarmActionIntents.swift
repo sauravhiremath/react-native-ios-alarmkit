@@ -4,6 +4,9 @@ import Foundation
 import os
 
 @available(iOS 26.0, *)
+public struct AlarmKitIntentsPackage: AppIntentsPackage {}
+
+@available(iOS 26.0, *)
 public struct AlarmKitStopIntent: LiveActivityIntent {
   public static let title: LocalizedStringResource = "Record alarm stop"
   public static let isDiscoverable = false

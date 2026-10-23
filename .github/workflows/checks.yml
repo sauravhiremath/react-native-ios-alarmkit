@@ -1,0 +1,87 @@
+name: Package and native checks
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        type: string
+        default: Release
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - run: bun install --frozen-lockfile
+      - run: bun run lint-ci
+      - run: bun run typecheck
+      - run: node --test tests/*.test.cjs
+      - run: bun run test --runInBand
+        working-directory: example
+      - run: npm pack --dry-run --json
+
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: xcodebuild -version
+      - name: Check AlarmKit SDK availability
+        run: |
+          cat > "$RUNNER_TEMP/AlarmKitProbe.swift" <<'EOF'
+          #if !canImport(AlarmKit) || !canImport(AppIntents)
+          #error("The iPhone Simulator SDK does not provide AlarmKit and AppIntents")
+          #endif
+          EOF
+          xcrun swiftc -typecheck -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target arm64-apple-ios15.1-simulator "$RUNNER_TEMP/AlarmKitProbe.swift"
+      - run: bash scripts/test-swift.sh
+
+  consumers:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - linkage: library
+            profile: standard
+          - linkage: static
+            profile: standard
+          - linkage: dynamic
+            profile: standard
+          - linkage: dynamic
+            profile: firebase
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - uses: ruby/setup-ruby@v1.334.0
+        with:
+          ruby-version: '4.0.9'
+      - run: gem install cocoapods --version 1.17.0 --no-document
+      - run: bun install --frozen-lockfile
+      - run: xcodebuild -version
+      - name: Build packed consumer and check action metadata
+        run: bash scripts/verify-ios-linkage.sh --linkage "${{ matrix.linkage }}" --configuration "${{ inputs.configuration }}" --profile "${{ matrix.profile }}"
+
+  expo:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - uses: ruby/setup-ruby@v1.334.0
+        with:
+          ruby-version: '4.0.9'
+      - run: gem install cocoapods --version 1.17.0 --no-document
+      - run: bun install --frozen-lockfile
+      - run: node scripts/verify-expo.cjs
