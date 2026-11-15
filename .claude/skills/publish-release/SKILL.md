@@ -40,12 +40,12 @@ Use Edit, not Write.
 
 Edit the `version` line only. Preserve formatting.
 
-### 4. Sanity checks (parallel)
+### 4. Sanity checks
 
-- `bun run lint`
+- `bun run lint` (this script runs `eslint --fix` and can change files)
 - `bun run typecheck`
 
-Both must pass. Don't commit if either fails.
+Both must pass. Then `git status --porcelain` must list only `package.json` and `CHANGELOG.md`. If lint changed other files, STOP and report them. Don't commit if any check fails.
 
 ### 5. Commit
 
