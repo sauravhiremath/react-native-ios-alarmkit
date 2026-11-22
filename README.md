@@ -251,7 +251,7 @@ A Widget Extension is **required** for the following features:
 | ------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
 | `AlarmKit.scheduleAlarm()`      | **No**                     | Works without Widget Extension - basic alarm functionality                                         |
 | `AlarmKit.scheduleTimer()`      | **Yes**                    | Timers show countdown UI in Dynamic Island, Lock Screen, and StandBy                               |
-| Snooze with countdown UI        | **Yes**                    | Snooze starts a countdown; test it with an embedded widget extension                               |
+| Snooze with countdown UI        | **Yes**                    | Already have a timer widget? [Register the AlarmKit countdown alongside it](https://github.com/sauravhiremath/react-native-ios-alarmkit/blob/master/docs/LIVE_ACTIVITY_SETUP.md#use-an-existing-live-activity-extension). |
 | Advanced configs with countdown | **Yes**                    | Custom alarms using `AlarmKitManager.shared.schedule()` with `countdown` or `paused` presentations |
 
 **What happens without Widget Extension:**
