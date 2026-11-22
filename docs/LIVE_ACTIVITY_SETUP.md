@@ -14,6 +14,8 @@ The local build checks use Xcode 27. Xcode 26 and physical-device behavior need 
 
 ## Add the widget target
 
+If your app already embeds a Live Activity extension, [use the existing extension](#use-an-existing-live-activity-extension). For a new extension:
+
 1. Open your app's Xcode workspace.
 2. Add a Widget Extension target with Live Activity support.
 3. Set the extension deployment target to iOS 26.
@@ -25,6 +27,28 @@ The local build checks use Xcode 27. Xcode 26 and physical-device behavior need 
 The example uses `AlarmAttributes<AlarmKitMetadata>` from `AlarmKitCore`.
 Both the scheduler and widget use the same empty metadata type.
 Do not create a second metadata type in the widget.
+
+## Use an existing Live Activity extension
+
+Keep your timer widget and its attributes. It cannot display Snooze by itself: WidgetKit needs an `ActivityConfiguration` for the scheduler's `AlarmAttributes<AlarmKitMetadata>`.
+
+1. Add [AlarmKitCountdown.swift](../example/ios/AlarmKitCountdown/AlarmKitCountdown.swift) to your existing extension target. Remove `@main` from the copied widget.
+2. Add `AlarmKitCountdown()` to your existing `WidgetBundle`. If your timer widget is itself marked `@main`, move `@main` to a bundle as shown below. Replace `MyTimerWidget` with your widget's name.
+
+```swift
+import SwiftUI
+import WidgetKit
+
+@main
+struct AppWidgets: WidgetBundle {
+  var body: some Widget {
+    MyTimerWidget()
+    AlarmKitCountdown()
+  }
+}
+```
+
+Use iOS 26 or later for this example. Keep the existing extension embedded and keep its property list. [Link the Swift core](#link-the-swift-core) in that target so the widget uses `AlarmKitMetadata` from `AlarmKitCore`.
 
 ## Link the Swift core
 
